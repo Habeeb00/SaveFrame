@@ -11,10 +11,22 @@ module.exports = {
         use: "ts-loader",
         exclude: /node_modules/,
       },
+      // Add support for WebAssembly files
+      {
+        test: /\.wasm$/,
+        type: "webassembly/async",
+      },
     ],
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    fallback: {
+      // Provide polyfills for Node.js core modules
+      crypto: false,
+      fs: false,
+      path: false,
+      os: false,
+    },
   },
   output: {
     filename: "code.js",
@@ -25,6 +37,9 @@ module.exports = {
       name: "plugin",
     },
     globalObject: "this", // Define the global object reference
+  },
+  experiments: {
+    asyncWebAssembly: true, // Enable async WebAssembly support
   },
   plugins: [
     // Define any environment variables needed
