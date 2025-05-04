@@ -7,36 +7,44 @@
     <style>
       :root {
         /* Light Mode Variables */
-        --primary-color: #0D99FF;
+        --primary-color: #0d99ff;
         --secondary-color: #666666;
-        --text-primary: #1E1E1E;
+        --text-primary: #1e1e1e;
         --text-secondary: #666666;
         --bg-color: #ffffff;
         --sidebar-bg: #f7f7f7;
-        --border-color: #E5E5E5;
-        --hover-color: #F5F5F5;
-        --active-color: #E5F4FF;
+        --border-color: #e5e5e5;
+        --hover-color: #f5f5f5;
+        --active-color: #e5f4ff;
         --shadow-color: rgba(0, 0, 0, 0.1);
-        --error-color: #FF3B30;
-        --success-color: #34C759;
+        --error-color: #ff3b30;
         --text-color: #333333;
         --accent-color: #0d99ff;
-        --danger-color: #f24822;
+        --button-color: #2c2c2e;
+        --collection-header-bg: #2c2c2e;
+      }
+
+      :root {
+        /* Common transition variables */
+        --transition-speed: 0.3s;
+        --transition-function: ease;
       }
 
       [data-theme="dark"] {
         /* Dark Mode Variables */
-        --primary-color: #0A84FF;
-        --secondary-color: #8E8E93;
-        --text-primary: #FFFFFF;
-        --text-secondary: #AEAEB2;
-        --bg-color: #1C1C1E;
-        --sidebar-bg: #2C2C2E;
-        --border-color: #38383A;
-        --hover-color: #2C2C2E;
-        --active-color: #1C3A57;
-        --danger-color: #f24822;
+        --primary-color: #0a84ff;
+        --secondary-color: #8e8e93;
+        --text-primary: #ffffff;
+        --text-secondary: #aeaeb2;
+        --bg-color: #1c1c1e;
+        --sidebar-bg: #2c2c2e;
+        --border-color: #38383a;
+        --hover-color: #3a3a3c;
+        --active-color: #2c4a67;
+        --danger-color: #ff4530;
         --shadow-color: rgba(0, 0, 0, 0.3);
+        --button-color: #2c2c2e;
+        --collection-header-bg: #2c2c2e;
       }
 
       * {
@@ -46,6 +54,40 @@
         font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
           Roboto, sans-serif;
         font-size: 10px;
+        transition-property: background-color, border-color, color, opacity,
+          transform, max-height;
+        transition-duration: var(--transition-speed);
+        transition-timing-function: var(--transition-function);
+      }
+
+      /* Stylish scrollbar */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 4px 0;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(150, 150, 150, 0.3);
+        border-radius: 10px;
+        transition: background 0.3s ease;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(150, 150, 150, 0.5);
+      }
+
+      /* Dark mode scrollbar */
+      [data-theme="dark"]::-webkit-scrollbar-thumb {
+        background: rgba(200, 200, 200, 0.2);
+      }
+
+      [data-theme="dark"]::-webkit-scrollbar-thumb:hover {
+        background: rgba(200, 200, 200, 0.4);
       }
 
       body {
@@ -59,19 +101,28 @@
         transition: background-color 0.3s, color 0.3s;
         font-size: 11px;
       }
-      
+
       .sidebar {
         background-color: var(--sidebar-bg);
         color: var(--text-primary);
-        border-right: 1px solid var(--border-color);
+        border-right: 1px solid transparent;
         height: 100vh;
         overflow-y: auto;
         width: 100%;
         display: flex;
         flex-direction: column;
-        transition: background-color 0.3s, color 0.3s;
+        transition: all 0.3s ease;
+        /* More subtle appearance */
+        backdrop-filter: blur(5px);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
       }
-      
+
+      /* Subtler dark mode sidebar */
+      [data-theme="dark"] .sidebar {
+        background-color: rgba(44, 44, 46, 0.9);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+      }
+
       /* Main scrollable container */
       #collections-container {
         flex: 1;
@@ -148,12 +199,48 @@
         border-bottom: 1px solid transparent;
         color: var(--secondary-color);
       }
-      
+
       .active-collection .collection-header {
         color: var(--text-color);
         background-color: var(--active-color);
       }
-      
+
+      /* Add header right container for buttons and arrow */
+      .collection-header-right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .collection-name {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        flex-grow: 1; /* Take up available space */
+      }
+
+      .collection-header:hover {
+        background-color: var(--hover-color);
+      }
+
+      /* Style for collection actions */
+      .collection-actions {
+        display: flex;
+        gap: 6px;
+        opacity: 0; /* Hide by default */
+        transition: opacity 0.2s ease;
+      }
+
+      /* Show actions on hover */
+      .collection-header:hover .collection-actions {
+        opacity: 1;
+      }
+
+      .collection-header .arrow {
+        transition: transform 0.2s;
+        margin-left: 4px; /* Add space between buttons and arrow */
+      }
+
       .collection-dimensions {
         margin-left: auto;
         font-size: 9px;
@@ -161,45 +248,28 @@
         margin-right: 8px;
       }
 
-      .collection-header:hover {
-        background-color: var(--hover-color);
-      }
-
-      .collection-header .arrow {
-        transition: transform 0.2s;
-      }
-
       .collection-header .arrow.expanded {
         transform: rotate(90deg);
       }
 
-      .collection-name {
-        display: flex;
-        align-items: center;
-        font-weight: 500;
-      }
-
       .collection-actions {
         display: flex;
-        gap: 4px;
-        opacity: 0;
-        transition: opacity 0.2s;
-      }
-
-      .collection-header:hover .collection-actions {
+        gap: 6px;
         opacity: 1;
       }
 
       .collection-content {
         overflow: hidden;
         max-height: 0;
-        transition: max-height 0.3s ease-out;
+        opacity: 0;
+        transition: max-height 0.5s ease-out, opacity 0.4s ease;
       }
 
       .collection-content.expanded {
-        max-height: 1000px;
+        max-height: 2000px;
+        opacity: 1;
       }
-      
+
       .arrow {
         transform: rotate(90deg);
         transition: transform 0.3s ease;
@@ -208,7 +278,7 @@
         font-size: 12px;
         color: var(--text-secondary);
       }
-      
+
       .arrow.expanded {
         transform: rotate(180deg);
       }
@@ -230,47 +300,94 @@
         position: relative;
         display: flex;
         align-items: center;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, transform 0.3s ease,
+          opacity 0.3s ease;
         gap: 12px;
+        opacity: 1;
+        transform: translateX(0);
+        height: auto;
+        overflow: hidden;
       }
-      
+
+      /* Create animation classes for entry/exit */
+      .preset-card-removing {
+        opacity: 0;
+        transform: translateX(-20px);
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+      }
+
       .preset-preview {
         flex-shrink: 0;
-        width: 32px;
-        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        height: auto;
+      }
+
+      .preset-preview {
+        flex-shrink: 0;
+        margin-right: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      
-      .frame-visual {
-  border-radius: 2px;
-  margin-bottom: 0;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  position: relative;
-  
-  /* Fixed square container */
-  width: 28px;
-  height: 28px;
-  
-  /* Force square aspect ratio */
-  aspect-ratio: 1 / 1;
-  
-  /* Ensure content is centered and contained */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  
-  /* Styling */
-  background-color: rgba(13, 153, 255, 0.2); 
-  border: 1px solid rgba(13, 153, 255, 0.4);
-  
-  /* Center the frame visual */
-  margin: 0 auto;
-}
 
+      .frame-visual {
+        border: 1px solid #ddd;
+        background-color: white;
+        border-radius: 3px;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+
+      /* Dark mode adjustments for better readability */
+      [data-theme="dark"] .frame-visual {
+        border: 1px solid #555;
+        background-color: #2a2a2a;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      [data-theme="dark"] .preset-name,
+      [data-theme="dark"] .preset-dimensions {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      [data-theme="dark"] .preset-card:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      [data-theme="dark"] .collection-header {
+        background-color: #2c2c2e;
+        border-bottom: 1px solid #38383a;
+      }
+
+      [data-theme="dark"] .active-collection .collection-header {
+        background-color: #2c4a67;
+      }
+
+      [data-theme="dark"] .collection-name {
+        color: #ffffff;
+      }
+
+      [data-theme="dark"] button {
+        color: #eeeeee;
+      }
+
+      [data-theme="dark"] button:hover {
+        background-color: #3a3a3c;
+      }
+
+      [data-theme="dark"] .favorite-btn.active svg {
+        fill: #ffcc33;
+        stroke: #ffcc33;
+      }
 
       .preset-name {
         flex-grow: 1;
@@ -278,7 +395,7 @@
         font-weight: 400;
         color: var(--text-primary);
       }
-      
+
       .preset-info {
         flex: 1;
         display: flex;
@@ -287,27 +404,30 @@
         justify-content: space-between;
         overflow: hidden;
       }
-      
+
       .preset-dimensions-row {
         display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: flex-end;
+        gap: 8px;
         margin-left: auto;
+        flex-shrink: 0;
       }
-      
+
       .preset-dimensions {
         font-size: 10px;
         color: var(--text-secondary);
       }
-      
+
       .preset-actions {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-left: auto;
       }
-      
-      .favorite-btn, .delete-preset-btn {
+
+      .favorite-btn,
+      .delete-preset-btn {
         border: none;
         background: none;
         cursor: pointer;
@@ -320,32 +440,49 @@
         transition: color 0.2s, background-color 0.2s;
         margin: 0;
       }
-      
+
       .favorite-btn {
         color: var(--text-secondary);
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        background: none;
+        box-shadow: none;
+        min-width: auto;
+        min-height: auto;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        opacity: 10%;
       }
-      
+
       .favorite-btn.active {
         color: var(--primary-color);
+        background: none;
+        box-shadow: none;
       }
-      
+
       .favorite-btn svg {
         stroke: currentColor;
         stroke-width: 1.5px;
       }
-      
-      .favorite-btn:hover, .delete-preset-btn:hover {
+
+      .delete-preset-btn:hover {
         background-color: var(--hover-color);
       }
-      
+
+      .favorite-btn:hover {
+        background-color: transparent;
+      }
+
       .delete-preset-btn {
         color: var(--text-secondary);
       }
-      
+
       .delete-preset-btn:hover {
         color: var(--error-color);
       }
-      
+
       .preset-name {
         font-size: 10px;
         font-weight: 500;
@@ -372,7 +509,7 @@
         margin-bottom: 4px;
         box-shadow: 0 1px 3px var(--shadow-color);
       }
-      
+
       .frame-dimensions {
         font-size: 9px;
         color: var(--secondary-color);
@@ -381,8 +518,10 @@
 
       .preset-info {
         display: flex;
+        flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
       }
 
       .preset-name {
@@ -390,29 +529,24 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 80%;
+        max-width: 60%;
+        margin-right: 8px;
       }
 
       .preset-dimensions {
         font-size: 9px;
         color: var(--text-secondary);
-        margin-right: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
       }
 
       .favorite-btn {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        background: var(--bg-color);
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        opacity: 10;
-        transition: opacity 0.2s;
-        padding: 0;
+        flex-shrink: 0;
       }
 
       .preset-card:hover .favorite-btn {
@@ -571,28 +705,64 @@
         <h3>Frame Presets</h3>
         <div>
           <button id="create-preset-btn" class="primary">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6 1V11M1 6H11"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-          Save Current Frame
-        </button>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 1V11M1 6H11"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            Save Current Frame
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div class="toolbar">
-      <div class="toolbar-buttons">
-        <button id="new-collection-btn">
+      <div class="toolbar">
+        <div class="toolbar-buttons">
+          <button id="new-collection-btn">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 1V11M1 6H11"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            New Collection
+          </button>
+          <button id="import-btn">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 9L1 10C1 10.5523 1.44772 11 2 11L10 11C10.5523 11 11 10.5523 11 10L11 9M6 8L6 1M6 8L3.5 5.5M6 8L8.5 5.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Import
+          </button>
+        </div>
+        <button id="sync-btn">
           <svg
             width="12"
             height="12"
@@ -601,87 +771,51 @@
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M6 1V11M1 6H11"
+              d="M1 5.5C1 3.29086 2.79086 1.5 5 1.5C6.48052 1.5 7.77308 2.30205 8.46922 3.5M11 6.5C11 8.70914 9.20914 10.5 7 10.5C5.51948 10.5 4.22692 9.69795 3.53078 8.5"
               stroke="currentColor"
               stroke-width="1.5"
               stroke-linecap="round"
             />
-          </svg>
-          New Collection
-        </button>
-        <button id="import-btn">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
             <path
-              d="M1 9L1 10C1 10.5523 1.44772 11 2 11L10 11C10.5523 11 11 10.5523 11 10L11 9M6 8L6 1M6 8L3.5 5.5M6 8L8.5 5.5"
+              d="M9.5 1.5L8.5 3.5L10.5 3.5M2.5 10.5L3.5 8.5L1.5 8.5"
               stroke="currentColor"
               stroke-width="1.5"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
           </svg>
-          Import
+          Sync
         </button>
       </div>
-      <button id="sync-btn">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M1 5.5C1 3.29086 2.79086 1.5 5 1.5C6.48052 1.5 7.77308 2.30205 8.46922 3.5M11 6.5C11 8.70914 9.20914 10.5 7 10.5C5.51948 10.5 4.22692 9.69795 3.53078 8.5"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-          <path
-            d="M9.5 1.5L8.5 3.5L10.5 3.5M2.5 10.5L3.5 8.5L1.5 8.5"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Sync
-      </button>
-    </div>
 
+      <div id="collections-container">
+        <!-- Collections will be added here dynamically -->
+        <div class="loading">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
 
-    <div id="collections-container">
-      <!-- Collections will be added here dynamically -->
-      <div class="loading">
-        <div class="loading-spinner"></div>
+      <div class="status-bar">
+        <div class="sync-status">Last synced: Never</div>
+        <div class="theme-toggle" id="theme-toggle">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M7 1.5V1M7 13V12.5M12.5 7H13M1 7H1.5M10.8995 3.1005L11.2497 2.7503M2.7503 11.2497L3.1005 10.8995M10.8995 10.8995L11.2497 11.2497M2.7503 2.7503L3.1005 3.1005M9.5 7C9.5 8.38071 8.38071 9.5 7 9.5C5.61929 9.5 4.5 8.38071 4.5 7C4.5 5.61929 5.61929 4.5 7 4.5C8.38071 4.5 9.5 5.61929 9.5 7Z"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
       </div>
     </div>
-
-    <div class="status-bar">
-      <div class="sync-status">Last synced: Never</div>
-      <div class="theme-toggle" id="theme-toggle">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 14 14"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M7 1.5V1M7 13V12.5M12.5 7H13M1 7H1.5M10.8995 3.1005L11.2497 2.7503M2.7503 11.2497L3.1005 10.8995M10.8995 10.8995L11.2497 11.2497M2.7503 2.7503L3.1005 3.1005M9.5 7C9.5 8.38071 8.38071 9.5 7 9.5C5.61929 9.5 4.5 8.38071 4.5 7C4.5 5.61929 5.61929 4.5 7 4.5C8.38071 4.5 9.5 5.61929 9.5 7Z"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-          />
-        </svg>
-      </div>
-    </div>
-    </div><!-- End of sidebar -->
+    <!-- End of sidebar -->
 
     <!-- Create Collection Modal -->
     <div class="modal" id="new-collection-modal">
@@ -911,6 +1045,23 @@
         return `${Math.round(width)} × ${Math.round(height)}`;
       }
 
+      // Calculate scale factor for frames to ensure consistent visual size
+      function calculateScaleFactor(width, height) {
+        const targetSize = 50; // Our target frame size (50x50px)
+        const maxDimension = Math.max(width, height);
+
+        // Scale down large frames
+        if (maxDimension > targetSize) {
+          return targetSize / maxDimension;
+        }
+        // Scale up small frames
+        else if (maxDimension < targetSize) {
+          return targetSize / maxDimension;
+        }
+        // Keep 1:1 if already at target size
+        return 1;
+      }
+
       // Supabase Integration
       async function setupSupabase() {
         if (!supabaseConfig.url || !supabaseConfig.key) {
@@ -958,13 +1109,16 @@
           }
 
           // Save config using Figma's storage via message passing
-          parent.postMessage({
-            pluginMessage: {
-              type: "save-supabase-config",
-              url: url,
-              key: key
-            }
-          }, "*");
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "save-supabase-config",
+                url: url,
+                key: key,
+              },
+            },
+            "*"
+          );
         }
 
         try {
@@ -1058,7 +1212,7 @@
       // Render all collections
       function renderCollections() {
         collectionsContainer.innerHTML = "";
-        
+
         // Check if pluginData exists before proceeding
         if (!pluginData || !pluginData.collections) {
           collectionsContainer.innerHTML = `<div class="empty-state">Loading collections...</div>`;
@@ -1067,7 +1221,7 @@
 
         // Create a virtual Favorites collection at the top
         const favorites = [];
-        
+
         // Get all favorite presets across collections
         pluginData.collections.forEach((collection) => {
           collection.presets.forEach((preset) => {
@@ -1080,13 +1234,13 @@
             }
           });
         });
-        
+
         // Add Favorites as a virtual collection
         if (favorites.length > 0) {
           const favoritesEl = document.createElement("div");
           favoritesEl.classList.add(`collection`);
           favoritesEl.classList.add(`collection-favorites`);
-          
+
           // Create favorites collection header
           favoritesEl.innerHTML = `
           <div class="collection-header" data-id="favorites">
@@ -1100,35 +1254,40 @@
           </div>
           <div class="collection-content expanded" data-collection-id="favorites">
             <div class="presets-list">
-              ${favorites.map(preset => `
-                <div class="preset-card" data-id="${preset.id}" data-collection="${preset.collectionId}">
+              ${favorites
+                .map(
+                  (preset) => `
+                <div class="preset-card" data-id="${
+                  preset.id
+                }" data-collection="${preset.collectionId}">
                   <div class="preset-preview">
-                    <div class="frame-visual" style="width: 24px; height: 0; padding-bottom: ${(preset.height/preset.width) * 24}px; background-color: rgba(13, 153, 255, 0.2); border: 1px solid rgba(13, 153, 255, 0.4);"></div>
+                    <div class="frame-visual"></div>
                   </div>
                   <div class="preset-info">
                     <div class="preset-name">${preset.name}</div>
                     <div class="preset-dimensions-row">
-                      <button class="favorite-btn active" data-id="${preset.id}" data-collection="${preset.collectionId}">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <button class="favorite-btn active" data-id="${
+                        preset.id
+                      }" data-collection="${preset.collectionId}">
+                        <svg width="16" height="16" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                           <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
                         </svg>
                       </button>
-                      <div class="preset-dimensions">${formatDimensions(preset.width, preset.height)}</div>
+                      <div class="preset-dimensions">${formatDimensions(
+                        preset.width,
+                        preset.height
+                      )}</div>
                     </div>
                   </div>
-                  <div class="preset-actions">
-                    <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${preset.collectionId}">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2 3H10M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
-                      </svg>
-                    </button>
-                  </div>
+                  <!-- No delete button in favorites -->
                 </div>
-              `).join('')}
+              `
+                )
+                .join("")}
             </div>
           </div>
           `;
-          
+
           collectionsContainer.appendChild(favoritesEl);
         }
 
@@ -1138,10 +1297,10 @@
           const collectionEl = document.createElement("div");
           collectionEl.classList.add(`collection`);
           collectionEl.classList.add(`collection-${collection.id}`);
-          
+
           // Add active class if this collection is active
           if (isActive) {
-            collectionEl.classList.add('active-collection');
+            collectionEl.classList.add("active-collection");
           }
 
           // Create collection header in a style similar to the screenshot
@@ -1150,47 +1309,64 @@
             <div class="collection-name">
               ${collection.name}
             </div>
-            ${!collection.isBuiltIn ? `
-            <div class="collection-actions">
-              <button class="share-collection-btn" data-id="${collection.id}">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(9 1)"/>
-                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(9 9)"/>
-                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(1 5)"/>
-                  <path d="M0 0L4 2.5M4 2.5L0 5M4 2.5L8 0M4 2.5L8 5" stroke="currentColor" stroke-width="1.5" transform="translate(2 3.5)"/>
-                </svg>
-              </button>
-              <button class="delete-collection-btn" data-id="${collection.id}">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 3H11M4 3V2C4 1.44772 4.44772 1 5 1H7C7.55228 1 8 1.44772 8 2V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </button>
+            <div class="collection-header-right">
+              ${
+                !collection.isBuiltIn
+                  ? `
+              <div class="collection-actions">
+                <button class="share-collection-btn" data-id="${collection.id}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8.68439 10.6578L15.3124 7.34378M15.3156 16.6578L8.69376 13.3469M21 6C21 7.65685 19.6569 9 18 9C16.3431 9 15 7.65685 15 6C15 4.34315 16.3431 3 18 3C19.6569 3 21 4.34315 21 6ZM21 18C21 19.6569 19.6569 21 18 21C16.3431 21 15 19.6569 15 18C15 16.3431 16.3431 15 18 15C19.6569 15 21 16.3431 21 18ZM9 12C9 13.6569 7.65685 15 6 15C4.34315 15 3 13.6569 3 12C3 10.3431 4.34315 9 6 9C7.65685 9 9 10.3431 9 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="delete-collection-btn" data-id="${collection.id}">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 3H11M4 3V2C4 1.44772 4.44772 1 5 1H7C7.55228 1 8 1.44772 8 2V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              `
+                  : ""
+              }
+              <div class="arrow">›</div>
             </div>
-            ` : ''}
-            <div class="arrow">›</div>
           </div>
           <div class="collection-content" data-collection-id="${collection.id}">
             <div class="presets-list">
-              ${collection.presets.length > 0
-                ? collection.presets
-                    .map(
-                      (preset) => `
-                <div class="preset-card" data-id="${preset.id}" data-collection="${collection.id}">
+              ${
+                collection.presets.length > 0
+                  ? collection.presets
+                      .map(
+                        (preset) => `
+                <div class="preset-card" data-id="${
+                  preset.id
+                }" data-collection="${collection.id}">
                   <div class="preset-preview">
-                    <div class="frame-visual" style="width: 24px; height: 0; padding-bottom: ${(preset.height/preset.width) * 24}px; background-color: rgba(13, 153, 255, 0.2); border: 1px solid rgba(13, 153, 255, 0.4);"></div>
+                    <div class="frame-visual"></div>
                   </div>
                   <div class="preset-info">
                     <div class="preset-name">${preset.name}</div>
                     <div class="preset-dimensions-row">
-                      <button class="favorite-btn ${preset.isFavorite ? "active" : ""}" data-id="${preset.id}" data-collection="${collection.id}">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="${preset.isFavorite ? "currentColor" : "none"}" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="${preset.isFavorite ? "currentColor" : "transparent"}" stroke="currentColor" stroke-width="1.5"/>
+                      <button class="favorite-btn ${
+                        preset.isFavorite ? "active" : ""
+                      }" data-id="${preset.id}" data-collection="${
+                          collection.id
+                        }">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="${
+                          preset.isFavorite ? "currentColor" : "none"
+                        }" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="${
+                            preset.isFavorite ? "currentColor" : "transparent"
+                          }" stroke="currentColor" stroke-width="1.5"/>
                         </svg>
                       </button>
-                      <div class="preset-dimensions">${formatDimensions(preset.width, preset.height)}</div>
+                      <div class="preset-dimensions">${formatDimensions(
+                        preset.width,
+                        preset.height
+                      )}</div>
                     </div>
                   </div>
-                  ${!collection.isBuiltIn ? `
+                  ${!collection.isBuiltIn && preset.dateCreated > 1000000000000 ? `
                   <div class="preset-actions">
                     <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${collection.id}">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1220,40 +1396,48 @@
       // Set up event listeners for collection elements
       function setupCollectionEventListeners() {
         // Collection header click - makes collection active and toggles expansion
-        document.querySelectorAll('.collection-header').forEach(header => {
-          header.addEventListener('click', (e) => {
+        document.querySelectorAll(".collection-header").forEach((header) => {
+          header.addEventListener("click", (e) => {
             // Stop event propagation to prevent any parent handlers from firing
             e.stopPropagation();
-            
+
             // Skip if clicking on action buttons
-            if (e.target.closest('.collection-actions') || e.target.closest('button')) {
+            if (
+              e.target.closest(".collection-actions") ||
+              e.target.closest("button")
+            ) {
               return;
             }
-            
-            const collectionId = header.getAttribute('data-id');
+
+            const collectionId = header.getAttribute("data-id");
             if (collectionId) {
               // First handle the UI expansion
               // Toggle arrow state
-              const arrow = header.querySelector('.arrow');
+              const arrow = header.querySelector(".arrow");
               if (arrow) {
-                arrow.classList.toggle('expanded');
+                arrow.classList.toggle("expanded");
               }
-              
+
               // Find and toggle the associated content div by data attribute
-              const contentDiv = document.querySelector(`.collection-content[data-collection-id="${collectionId}"]`);
+              const contentDiv = document.querySelector(
+                `.collection-content[data-collection-id="${collectionId}"]`
+              );
               if (contentDiv) {
-                contentDiv.classList.toggle('expanded');
+                contentDiv.classList.toggle("expanded");
               }
-              
+
               // Then notify Figma about active collection change
-              parent.postMessage({
-                pluginMessage: {
-                  type: "set-active-collection",
-                  collectionId: collectionId,
-                  // Add a flag to indicate this is just an active state change, not a full refresh
-                  preserveUIState: true
-                }
-              }, "*");
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: "set-active-collection",
+                    collectionId: collectionId,
+                    // Add a flag to indicate this is just an active state change, not a full refresh
+                    preserveUIState: true,
+                  },
+                },
+                "*"
+              );
             }
           });
         });
@@ -1305,12 +1489,13 @@
             const preset = collection.presets.find((p) => p.id === presetId);
             if (!preset) return;
 
-            // Notify Figma to use this preset
+            // Notify Figma to use this preset on the selected frame
             parent.postMessage(
               {
                 pluginMessage: {
                   type: "use-preset",
                   preset,
+                  applyToSelection: true, // Flag to apply to selected frame instead of creating new
                 },
               },
               "*"
@@ -1318,14 +1503,86 @@
           });
         });
 
+        // Delete preset button click
+        document.querySelectorAll(".delete-preset-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const presetId = btn.getAttribute("data-id");
+            const collectionId = btn.getAttribute("data-collection");
+            
+            // Get the current expanded state to preserve it during animation
+            saveExpandedState();
+            
+            // Add a removing animation
+            const card = btn.closest('.preset-card');
+            if (card) {
+              card.classList.add('preset-card-removing');
+            }
+            
+            // Notify Figma after a short delay for animation
+            setTimeout(() => {
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: "delete-preset",
+                    presetId: presetId,
+                    collectionId: collectionId,
+                  },
+                },
+                "*"
+              );
+            }, 100);
+          });
+        });
+        
         // Favorite button click
         document.querySelectorAll(".favorite-btn").forEach((btn) => {
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const presetId = e.currentTarget.dataset.id;
             const collectionId = e.currentTarget.dataset.collection;
+            const card = e.currentTarget.closest(".preset-card");
 
-            // Notify Figma
+            // Get the current expanded state to preserve it during animation
+            saveExpandedState();
+
+            // Toggle the favorite state visually immediately for instant feedback
+            const isFavorite = e.currentTarget.classList.contains("active");
+            if (isFavorite) {
+              e.currentTarget.classList.remove("active");
+              const svg = e.currentTarget.querySelector("svg");
+              if (svg) svg.setAttribute("fill", "transparent");
+
+              // If removing from favorites section, animate removal
+              if (
+                card &&
+                document.querySelector(".favorites-section") &&
+                card.closest(".favorites-section")
+              ) {
+                card.classList.add("preset-card-removing");
+                // Wait for animation before notifying Figma
+                setTimeout(() => {
+                  // Notify Figma only after animation starts
+                  parent.postMessage(
+                    {
+                      pluginMessage: {
+                        type: "toggle-favorite",
+                        presetId,
+                        collectionId,
+                      },
+                    },
+                    "*"
+                  );
+                }, 100); // Short delay for animation to start
+                return;
+              }
+            } else {
+              e.currentTarget.classList.add("active");
+              const svg = e.currentTarget.querySelector("svg");
+              if (svg) svg.setAttribute("fill", "currentColor");
+            }
+
+            // Notify Figma for normal cases
             parent.postMessage(
               {
                 pluginMessage: {
@@ -1524,11 +1781,14 @@
       // Load saved Supabase config on startup
       window.addEventListener("load", () => {
         // Request Supabase config from plugin instead of using localStorage
-        parent.postMessage({
-          pluginMessage: {
-            type: "get-supabase-config"
-          }
-        }, "*");
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "get-supabase-config",
+            },
+          },
+          "*"
+        );
       });
 
       // ============================================================
@@ -1558,18 +1818,18 @@
             pluginData = msg.data;
             renderCollections();
             break;
-            
+
           case "active-collection-changed":
             // Only update the active collection state without rerendering
             if (pluginData) {
               pluginData.activeCollectionId = msg.collectionId;
-              
+
               // Just update the visual active state without full re-render
-              document.querySelectorAll('.collection').forEach(coll => {
+              document.querySelectorAll(".collection").forEach((coll) => {
                 if (coll.classList.contains(`collection-${msg.collectionId}`)) {
-                  coll.classList.add('active-collection');
+                  coll.classList.add("active-collection");
                 } else {
-                  coll.classList.remove('active-collection');
+                  coll.classList.remove("active-collection");
                 }
               });
             }
@@ -1583,7 +1843,7 @@
               initSupabase(msg.config.url, msg.config.key);
             }
             break;
-            
+
           case "selection-data":
             // Received frame data for preset creation
             presetFramesContainer.innerHTML = "";
@@ -1621,6 +1881,145 @@
             break;
         }
       };
+
+      // Function to set frame sizes based on aspect ratios
+      function setFrameSizes() {
+        // Get all preset cards
+        const presetCards = document.querySelectorAll(".preset-card");
+
+        presetCards.forEach((presetCard) => {
+          // Find frame visual in this card
+          const frameVisual = presetCard.querySelector(".frame-visual");
+          if (!frameVisual) return;
+
+          // Get preset ID and collection ID
+          const presetId = presetCard.getAttribute("data-id");
+          const collectionId = presetCard.getAttribute("data-collection");
+
+          // Find preset data
+          let width = 100;
+          let height = 100;
+
+          // Find this preset in the plugin data
+          if (pluginData && pluginData.collections) {
+            const collection = pluginData.collections.find(
+              (c) => c.id === collectionId
+            );
+            if (collection) {
+              const preset = collection.presets.find((p) => p.id === presetId);
+              if (preset) {
+                width = preset.width;
+                height = preset.height;
+              }
+            }
+          }
+
+          // Adjust frame size based on aspect ratio but slightly smaller to avoid cropping
+          const maxDimension = 20; // Keep the max dimension smaller to ensure no cropping
+
+          if (width > height) {
+            // Landscape
+            const aspectRatio = width / height;
+            const calculatedHeight = maxDimension / aspectRatio;
+            frameVisual.style.width = maxDimension + "px";
+            frameVisual.style.height = calculatedHeight + "px";
+          } else if (height > width) {
+            // Portrait
+            const aspectRatio = height / width;
+            const calculatedWidth = maxDimension / aspectRatio;
+            frameVisual.style.height = maxDimension + "px";
+            frameVisual.style.width = calculatedWidth + "px";
+          } else {
+            // Square
+            frameVisual.style.width = maxDimension + "px";
+            frameVisual.style.height = maxDimension + "px";
+          }
+        });
+      }
+
+      // Track expanded collections to preserve state during re-renders
+      let expandedCollections = [];
+
+      // Function to store current expanded state
+      function saveExpandedState() {
+        expandedCollections = [];
+        document
+          .querySelectorAll(".collection-content.expanded")
+          .forEach((content) => {
+            const collectionId = content.getAttribute("data-collection-id");
+            if (collectionId) expandedCollections.push(collectionId);
+          });
+      }
+
+      // Function to restore expanded state
+      function restoreExpandedState() {
+        expandedCollections.forEach((collectionId) => {
+          const contentDiv = document.querySelector(
+            `.collection-content[data-collection-id="${collectionId}"]`
+          );
+          const header = document.querySelector(
+            `.collection-header[data-id="${collectionId}"]`
+          );
+          if (contentDiv) contentDiv.classList.add("expanded");
+          if (header) {
+            const arrow = header.querySelector(".arrow");
+            if (arrow) arrow.classList.add("expanded");
+          }
+        });
+      }
+
+      // Function for smooth UI updates
+      function smoothUpdate(callback) {
+        const container = document.getElementById("collections-container");
+
+        // Only apply fade effect if container exists
+        if (!container) {
+          callback();
+          return;
+        }
+
+        // Add a CSS class for the transition
+        container.style.transition = "opacity 0.2s ease";
+        container.style.opacity = "0.6";
+
+        // Short timeout to let the transition happen
+        setTimeout(() => {
+          // Execute the update
+          callback();
+
+          // Restore opacity with a slight delay to ensure DOM is updated
+          setTimeout(() => {
+            container.style.opacity = "1";
+          }, 50);
+        }, 100);
+      }
+
+      // Apply frame sizing after collections are rendered
+      const originalRenderCollections = renderCollections;
+      renderCollections = function () {
+        // Save expanded state before re-rendering
+        saveExpandedState();
+
+        // Call original render function with smooth transition
+        smoothUpdate(() => {
+          originalRenderCollections.apply(this, arguments);
+          // Restore expanded state immediately after rendering
+          restoreExpandedState();
+          // Apply frame sizing after restoring state
+          setFrameSizes();
+        });
+      };
+
+      // Also apply frame sizing when the UI receives updates
+      window.addEventListener("message", function (event) {
+        if (
+          event.data.pluginMessage &&
+          event.data.pluginMessage.type === "update"
+        ) {
+          // Apply frame sizing after a short delay to ensure DOM is updated
+          setTimeout(setFrameSizes, 50);
+        }
+      });
 
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");

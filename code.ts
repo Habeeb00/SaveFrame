@@ -29,6 +29,9 @@ interface PluginMessage {
   [key: string]: any;
 }
 
+// IDs of built-in collections that should be preserved during sync operations
+const BUILT_IN_COLLECTION_IDS = ["instagram", "facebook", "twitter", "youtube", "figma"];
+
 // Initial data with built-in collections
 const defaultCollections: Collection[] = [
   {
@@ -137,6 +140,19 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
   }
 
   try {
+    // First delete all existing collections for this user to ensure clean slate
+    // This makes sync a true force-replace operation
+    const { error: deleteError } = await supabaseClient
+      .from("collections")
+      .delete()
+      .not('id', 'in', BUILT_IN_COLLECTION_IDS); // Preserve built-in collections
+      
+    if (deleteError) {
+      console.error("Error deleting old collections:", deleteError);
+      throw deleteError;
+    }
+    
+    // Now insert all current collections
     const { error } = await supabaseClient.from("collections").upsert(
       data.collections.map((collection) => ({
         id: collection.id,
@@ -152,10 +168,12 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
     // Update last sync time
     data.lastSyncedAt = Date.now();
     await savePluginData(data);
-
+    
+    figma.notify("Successfully synced all collections to Supabase");
     return true;
   } catch (error) {
     console.error("Sync error:", error);
+    figma.notify("Failed to sync collections to Supabase. See console for details.", {error: true});
     return false;
   }
 }
@@ -275,8 +293,31 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       break;
 
     case "use-preset":
-      // Create a frame using the selected preset
-      createFrame(msg.preset.width, msg.preset.height, msg.preset.name);
+      // Check if we should apply to selection or create a new frame
+      if (msg.applyToSelection) {
+        // Apply preset to selected frames
+        const selection = figma.currentPage.selection;
+        const frames = selection.filter(
+          (node): node is FrameNode => node.type === "FRAME"
+        );
+        
+        if (frames.length === 0) {
+          figma.notify("Please select at least one frame to apply the preset");
+          return;
+        }
+        
+        // Apply the preset dimensions to all selected frames
+        frames.forEach(frame => {
+          frame.resize(msg.preset.width, msg.preset.height);
+          // Optionally update the name if appropriate
+          // frame.name = msg.preset.name;
+        });
+        
+        figma.notify(`Applied "${msg.preset.name}" to ${frames.length} selected frame${frames.length > 1 ? 's' : ''}`);
+      } else {
+        // Create a new frame using the selected preset
+        createFrame(msg.preset.width, msg.preset.height, msg.preset.name);
+      }
       break;
 
     case "toggle-favorite":
