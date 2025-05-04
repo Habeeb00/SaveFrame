@@ -8,18 +8,23 @@
       :root {
         /* Light Mode Variables */
         --primary-color: #0d99ff;
-        --secondary-color: #666666;
-        --text-primary: #1e1e1e;
-        --text-secondary: #666666;
+        --secondary-color: #888888;
         --bg-color: #ffffff;
-        --sidebar-bg: #f7f7f7;
-        --border-color: #e5e5e5;
-        --hover-color: #f5f5f5;
-        --active-color: #e5f4ff;
-        --shadow-color: rgba(0, 0, 0, 0.1);
-        --error-color: #ff3b30;
         --text-color: #333333;
+        --border-color: #e0e0e0;
+        --active-color: #f5f5f5;
+        --hover-color: #f0f0f0;
         --accent-color: #0d99ff;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --figma-bg: #F5F5F5;
+        --figma-text: #333333;
+        --figma-secondary: #7F7F7F;
+        --figma-border: #E5E5E5;
+        --figma-hover: #E8E8E8;
+        --figma-blue: #18A0FB;
+        --figma-blue-hover: #0D8DE3;
+        --tooltip-delay: 600ms;
+        --error-color: #ff3b30;
         --button-color: #2c2c2e;
         --collection-header-bg: #2c2c2e;
       }
@@ -58,6 +63,49 @@
           transform, max-height;
         transition-duration: var(--transition-speed);
         transition-timing-function: var(--transition-function);
+      }
+
+      body {
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+        color: var(--figma-text);
+        background-color: var(--figma-bg);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: none;
+      }
+
+      /* Tooltip styles */
+      [data-tooltip] {
+        position: relative;
+      }
+
+      [data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+        transition-delay: 0ms;
+        pointer-events: none;
+        z-index: 1000;
+      }
+
+      [data-tooltip]:hover::after {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: var(--tooltip-delay);
       }
 
       /* Stylish scrollbar */
@@ -124,11 +172,11 @@
       }
 
       /* Main scrollable container */
-      #collections-container {
+      .main {
+        padding: 0;
         flex: 1;
         overflow-y: auto;
-        overflow-x: hidden;
-        padding-bottom: 16px;
+        background-color: white;
       }
 
       button {
@@ -145,16 +193,18 @@
       }
 
       button:hover {
-        background-color: var(--hover-color);
+        background-color: var(--figma-hover);
       }
 
       button.primary {
-        background-color: var(--accent-color);
+        background-color: var(--figma-blue);
         color: white;
+        border-color: var(--figma-blue);
       }
 
       button.primary:hover {
-        opacity: 0.9;
+        background-color: var(--figma-blue-hover);
+        border-color: var(--figma-blue-hover);
       }
 
       button.danger {
@@ -193,11 +243,42 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 12px;
         cursor: pointer;
-        user-select: none;
-        border-bottom: 1px solid transparent;
-        color: var(--secondary-color);
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 0;
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .drag-handle {
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 6px;
+        cursor: move;
+        opacity: 0.4;
+        transition: opacity 0.2s ease;
+      }
+
+      .collection-header:hover .drag-handle {
+        opacity: 0.8;
+      }
+
+      .collection-name {
+        margin-left: 4px;
+        flex: 1;
+      }
+
+      .collection-header.dragging {
+        opacity: 0.6;
+        background-color: var(--figma-color-bg-hover);
+      }
+
+      .collection-header.drag-over {
+        border-top: 2px solid var(--figma-color-border-brand);
       }
 
       .active-collection .collection-header {
@@ -226,13 +307,17 @@
       /* Style for collection actions */
       .collection-actions {
         display: flex;
-        gap: 6px;
-        opacity: 0; /* Hide by default */
+        gap: 8px;
         transition: opacity 0.2s ease;
       }
-
-      /* Show actions on hover */
-      .collection-header:hover .collection-actions {
+      
+      /* Make delete button more visible */
+      .delete-collection-btn, .share-collection-btn {
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+      }
+      
+      .delete-collection-btn:hover, .share-collection-btn:hover {
         opacity: 1;
       }
 
@@ -263,11 +348,14 @@
         max-height: 0;
         opacity: 0;
         transition: max-height 0.5s ease-out, opacity 0.4s ease;
+        margin: 0;
+        padding: 0;
       }
 
       .collection-content.expanded {
         max-height: 2000px;
         opacity: 1;
+        border-top: none;
       }
 
       .arrow {
@@ -287,14 +375,11 @@
         display: flex;
         flex-direction: column;
         padding: 0;
-        margin: 4px 0;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+        margin: 0;
         overflow: hidden;
       }
 
       .preset-card {
-        border-bottom: 1px solid var(--border-color);
         padding: 8px 12px;
         cursor: pointer;
         position: relative;
@@ -307,6 +392,7 @@
         transform: translateX(0);
         height: auto;
         overflow: hidden;
+        border: none;
       }
 
       /* Create animation classes for entry/exit */
@@ -427,18 +513,28 @@
       }
 
       .favorite-btn,
-      .delete-preset-btn {
+      .delete-preset-btn,
+      .preset-actions button, 
+      .collection-actions button {
         border: none;
         background: none;
-        cursor: pointer;
-        padding: 4px;
-        color: var(--text-secondary);
+        color: var(--secondary-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 4px;
-        transition: color 0.2s, background-color 0.2s;
-        margin: 0;
+        padding: 5px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 24px;
+        height: 24px;
+        position: relative;
+      }
+      
+      .preset-actions button svg, 
+      .collection-actions button svg {
+        width: 14px;
+        height: 14px;
       }
 
       .favorite-btn {
@@ -559,7 +655,7 @@
       }
 
       .status-bar {
-        border-top: 1px solid var(--border-color);
+        border-top: 0.3px solid var(--border-color);
         padding: 8px 16px;
         display: flex;
         justify-content: space-between;
@@ -574,7 +670,8 @@
 
       .theme-toggle {
         cursor: pointer;
-        color: var(--secondary-color);
+        color: var(--figma-secondary);
+        padding: 4px;
       }
 
       .modal {
@@ -611,6 +708,21 @@
         font-weight: 600;
         margin-bottom: 16px;
         font-size: 12px;
+      }
+
+      .collection {
+        border-bottom: 0.1px solid var(--border-color);
+        margin: 0;
+        padding: 0;
+      }
+      
+      .collections-container {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .collection:last-child {
+        border-bottom: none;
       }
 
       .form-group {
@@ -704,7 +816,7 @@
       <div class="header">
         <h3>Frame Presets</h3>
         <div>
-          <button id="create-preset-btn" class="primary">
+          <button id="create-preset-btn" class="primary" data-tooltip="Create preset from selected frame">
             <svg
               width="12"
               height="12"
@@ -726,7 +838,7 @@
 
       <div class="toolbar">
         <div class="toolbar-buttons">
-          <button id="new-collection-btn">
+          <button id="new-collection-btn" data-tooltip="Create a new collection">
             <svg
               width="12"
               height="12"
@@ -743,7 +855,7 @@
             </svg>
             New Collection
           </button>
-          <button id="import-btn">
+          <button id="import-btn" data-tooltip="Import a collection from another user">
             <svg
               width="12"
               height="12"
@@ -762,7 +874,7 @@
             Import
           </button>
         </div>
-        <button id="sync-btn">
+        <button id="sync-btn" data-tooltip="Sync your collections with Supabase">
           <svg
             width="12"
             height="12"
@@ -788,7 +900,7 @@
         </button>
       </div>
 
-      <div id="collections-container">
+      <div class="collections-container">
         <!-- Collections will be added here dynamically -->
         <div class="loading">
           <div class="loading-spinner"></div>
@@ -939,8 +1051,9 @@
       // ============================================================
       // DOM Elements
       // ============================================================
-      const collectionsContainer = document.getElementById(
-        "collections-container"
+      // Global variables
+      const collectionsContainer = document.querySelector(
+        ".collections-container"
       );
       const themeToggle = document.getElementById("theme-toggle");
       const syncBtn = document.getElementById("sync-btn");
@@ -1209,6 +1322,126 @@
       // Rendering Functions
       // ============================================================
 
+      // Setup drag and drop functionality for collections
+      function setupCollectionDragAndDrop() {
+        let draggingElement = null;
+        let previousOrder = [];
+        
+        // Store the current order of collections
+        function saveCurrentOrder() {
+          const collections = document.querySelectorAll('.collection');
+          previousOrder = Array.from(collections)
+            .filter(el => el.querySelector('.collection-header'))
+            .map(el => el.querySelector('.collection-header').dataset.id);
+          return previousOrder;
+        }
+        
+        // Save new order to Figma
+        function saveNewOrder() {
+          const collections = document.querySelectorAll('.collection');
+          const newOrder = Array.from(collections)
+            .filter(el => el.querySelector('.collection-header'))
+            .map(el => el.querySelector('.collection-header').dataset.id)
+            .filter(id => id !== 'favorites'); // Filter out the favorites virtual collection
+          
+          console.log('Previous order:', previousOrder);
+          console.log('New order:', newOrder);
+          
+          // Always send the reorder message to make sure it's processed
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "reorder-collections",
+                collectionIds: newOrder,
+              },
+            },
+            "*"
+          );
+        }
+        
+        // Setup drag and drop for each collection header
+        document.querySelectorAll('.collection-header').forEach(header => {
+          // Skip favorites collection which shouldn't be draggable
+          if (header.dataset.id === 'favorites') {
+            header.setAttribute('draggable', 'false');
+            return;
+          }
+          
+          // Dragstart - when user starts dragging
+          header.addEventListener('dragstart', (e) => {
+            draggingElement = header.closest('.collection');
+            draggingElement.classList.add('dragging');
+            
+            // Set data for drag operation
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', header.dataset.id);
+            
+            // Store current order
+            saveCurrentOrder();
+            
+            // Add delay for visual feedback
+            setTimeout(() => {
+              draggingElement.style.opacity = '0.6';
+            }, 0);
+          });
+          
+          // Dragend - when user releases the element
+          header.addEventListener('dragend', () => {
+            if (draggingElement) {
+              draggingElement.classList.remove('dragging');
+              draggingElement.style.opacity = '1';
+              draggingElement = null;
+              
+              // Remove drag-over styling
+              document.querySelectorAll('.collection-header').forEach(h => {
+                h.classList.remove('drag-over');
+              });
+              
+              // Save the new order
+              saveNewOrder();
+            }
+          });
+          
+          // Dragover - as dragged element moves over potential drop targets
+          header.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const container = header.closest('.collection');
+            if (container !== draggingElement && header.dataset.id !== 'favorites') {
+              header.classList.add('drag-over');
+            }
+          });
+          
+          // Dragleave - when dragged element leaves a potential drop target
+          header.addEventListener('dragleave', () => {
+            header.classList.remove('drag-over');
+          });
+          
+          // Drop - when element is dropped
+          header.addEventListener('drop', (e) => {
+            e.preventDefault();
+            header.classList.remove('drag-over');
+            
+            if (!draggingElement) return;
+            
+            const targetContainer = header.closest('.collection');
+            if (targetContainer !== draggingElement && header.dataset.id !== 'favorites') {
+              const containers = Array.from(document.querySelectorAll('.collection'));
+              const dragIndex = containers.indexOf(draggingElement);
+              const targetIndex = containers.indexOf(targetContainer);
+              
+              // Determine if we need to insert before or after
+              if (dragIndex < targetIndex) {
+                document.querySelector('.collections-container').insertBefore(draggingElement, targetContainer.nextSibling);
+              } else {
+                document.querySelector('.collections-container').insertBefore(draggingElement, targetContainer);
+              }
+            }
+          });
+        });
+      }
+      
       // Render all collections
       function renderCollections() {
         collectionsContainer.innerHTML = "";
@@ -1305,7 +1538,12 @@
 
           // Create collection header in a style similar to the screenshot
           collectionEl.innerHTML = `
-          <div class="collection-header" data-id="${collection.id}">
+          <div class="collection-header" data-id="${collection.id}" draggable="true">
+            <div class="drag-handle">
+              <svg width="10" height="10" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 5H5M7 10H5M7 15H5M15 5H13M15 10H13M15 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
             <div class="collection-name">
               ${collection.name}
             </div>
@@ -1314,21 +1552,21 @@
                 !collection.isBuiltIn
                   ? `
               <div class="collection-actions">
-                <button class="share-collection-btn" data-id="${collection.id}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <button class="share-collection-btn" data-id="${collection.id}" data-tooltip="Share collection">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M8.68439 10.6578L15.3124 7.34378M15.3156 16.6578L8.69376 13.3469M21 6C21 7.65685 19.6569 9 18 9C16.3431 9 15 7.65685 15 6C15 4.34315 16.3431 3 18 3C19.6569 3 21 4.34315 21 6ZM21 18C21 19.6569 19.6569 21 18 21C16.3431 21 15 19.6569 15 18C15 16.3431 16.3431 15 18 15C19.6569 15 21 16.3431 21 18ZM9 12C9 13.6569 7.65685 15 6 15C4.34315 15 3 13.6569 3 12C3 10.3431 4.34315 9 6 9C7.65685 9 9 10.3431 9 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
-                <button class="delete-collection-btn" data-id="${collection.id}">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 3H11M4 3V2C4 1.44772 4.44772 1 5 1H7C7.55228 1 8 1.44772 8 2V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <button class="delete-collection-btn" data-id="${collection.id}" data-tooltip="Delete collection">
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 3H11M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
                   </svg>
                 </button>
               </div>
               `
                   : ""
               }
-              <div class="arrow">›</div>
+              <div class="arrow" data-tooltip="Expand/Collapse">›</div>
             </div>
           </div>
           <div class="collection-content" data-collection-id="${collection.id}">
@@ -1351,7 +1589,7 @@
                         preset.isFavorite ? "active" : ""
                       }" data-id="${preset.id}" data-collection="${
                           collection.id
-                        }">
+                        }" data-tooltip="${preset.isFavorite ? "Remove from favorites" : "Add to favorites"}">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="${
                           preset.isFavorite ? "currentColor" : "none"
                         }" xmlns="http://www.w3.org/2000/svg">
@@ -1368,7 +1606,7 @@
                   </div>
                   ${!collection.isBuiltIn && preset.dateCreated > 1000000000000 ? `
                   <div class="preset-actions">
-                    <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${collection.id}">
+                    <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${collection.id}" data-tooltip="Delete preset">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M2 3H10M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
                       </svg>
@@ -1378,7 +1616,7 @@
               `
                       )
                       .join("")
-                  : `<div class="empty-state">No presets in this collection. Create one using the "Save Current Frame" button.</div>`
+                  : `<div class="empty-state" style="border: none; border-top: none; border-bottom: none;">No presets in this collection. Create one using the "Save Current Frame" button.</div>`
               }
             </div>
           </div>
@@ -1389,6 +1627,35 @@
 
         // Set up event listeners for the newly created elements
         setupCollectionEventListeners();
+        
+        // Setup drag and drop for collection reordering
+        setupCollectionDragAndDrop();
+        
+        // Render the frame visuals for each preset
+        document.querySelectorAll(".frame-visual").forEach((visual) => {
+          const card = visual.closest(".preset-card");
+          if (!card) return;
+          
+          const presetId = card.dataset.id;
+          const collectionId = card.dataset.collection;
+          
+          // Find the preset data
+          const collection = pluginData.collections.find(c => c.id === collectionId);
+          if (!collection) return;
+          
+          const preset = collection.presets.find(p => p.id === presetId);
+          if (!preset) return;
+          
+          // Calculate scale for the visual representation
+          const scaleFactor = calculateScaleFactor(preset.width, preset.height);
+          
+          // Set the visual style to match the frame dimensions proportionally
+          const frameWidth = preset.width * scaleFactor;
+          const frameHeight = preset.height * scaleFactor;
+          
+          visual.style.width = `${frameWidth}px`;
+          visual.style.height = `${frameHeight}px`;
+        });
       }
 
       // Favorites are now handled directly inside the renderCollections function
@@ -1627,6 +1894,26 @@
         );
 
         hideModal(newCollectionModal);
+        
+        // If we have a flag to create preset after collection, trigger the preset creation
+        if (window.createPresetAfterCollection) {
+          // Reset the flag
+          window.createPresetAfterCollection = false;
+          
+          // Set a timeout to allow the collection to be created first
+          setTimeout(() => {
+            // We'll request the current selection data from Figma
+            // The targetCollectionId will be set in the onmessage handler when we get the update
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "create-preset",
+                },
+              },
+              "*"
+            );
+          }, 300);
+        }
       });
 
       // Cancel new collection
@@ -1636,17 +1923,36 @@
 
       // Create preset
       createPresetBtn.addEventListener("click", () => {
-        // Check if we have an active collection
-        if (!pluginData.activeCollectionId) {
-          alert("Please select an active collection first");
+        // First check if any custom collections exist
+        const customCollections = pluginData.collections.filter(c => !c.isBuiltIn);
+        
+        // If no custom collections exist, prompt to create one
+        if (customCollections.length === 0) {
+          if (confirm("You need to create a collection first to save frames. Would you like to create one now?")) {
+            collectionNameInput.value = "";
+            showModal(newCollectionModal);
+            
+            // Set a flag to indicate we should create a preset after collection is created
+            window.createPresetAfterCollection = true;
+          }
           return;
         }
-
+        
+        // If no active collection or active collection is built-in, use the first custom collection
+        const activeCollection = pluginData.collections.find(c => c.id === pluginData.activeCollectionId);
+        let targetCollectionId = pluginData.activeCollectionId;
+        
+        if (!activeCollection || activeCollection.isBuiltIn) {
+          targetCollectionId = customCollections[0].id;
+          console.log('Using first custom collection:', targetCollectionId);
+        }
+        
         // Request current selection from Figma
         parent.postMessage(
           {
             pluginMessage: {
               type: "create-preset",
+              targetCollectionId: targetCollectionId
             },
           },
           "*"
@@ -1970,7 +2276,7 @@
 
       // Function for smooth UI updates
       function smoothUpdate(callback) {
-        const container = document.getElementById("collections-container");
+        const container = document.querySelector(".collections-container");
 
         // Only apply fade effect if container exists
         if (!container) {
