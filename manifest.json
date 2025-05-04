@@ -1,0 +1,25 @@
+{
+  "name": "Frame Presets",
+  "id": "1500778509486639308",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma",
+    "dev"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://*.supabase.co",
+      "https://unpkg.com"
+    ]
+  },
+  "capabilities": [
+    "inspect"
+  ],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "permissions": [
+    "currentuser"
+  ]
+}

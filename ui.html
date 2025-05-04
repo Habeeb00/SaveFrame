@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frame Presets</title>
+    <style>
+      :root {
+        /* Light Mode Variables */
+        --primary-color: #0D99FF;
+        --secondary-color: #666666;
+        --text-primary: #1E1E1E;
+        --text-secondary: #666666;
+        --bg-color: #ffffff;
+        --sidebar-bg: #f7f7f7;
+        --border-color: #E5E5E5;
+        --hover-color: #F5F5F5;
+        --active-color: #E5F4FF;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --error-color: #FF3B30;
+        --success-color: #34C759;
+        --text-color: #333333;
+        --accent-color: #0d99ff;
+        --danger-color: #f24822;
+      }
+
+      [data-theme="dark"] {
+        /* Dark Mode Variables */
+        --primary-color: #0A84FF;
+        --secondary-color: #8E8E93;
+        --text-primary: #FFFFFF;
+        --text-secondary: #AEAEB2;
+        --bg-color: #1C1C1E;
+        --sidebar-bg: #2C2C2E;
+        --border-color: #38383A;
+        --hover-color: #2C2C2E;
+        --active-color: #1C3A57;
+        --danger-color: #f24822;
+        --shadow-color: rgba(0, 0, 0, 0.3);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        font-size: 10px;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        transition: background-color 0.3s, color 0.3s;
+        font-size: 11px;
+      }
+      
+      .sidebar {
+        background-color: var(--sidebar-bg);
+        color: var(--text-primary);
+        border-right: 1px solid var(--border-color);
+        height: 100vh;
+        overflow-y: auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      
+      /* Main scrollable container */
+      #collections-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 16px;
+      }
+
+      button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--text-color);
+        padding: 4px 8px;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+        font-size: 10px;
+      }
+
+      button:hover {
+        background-color: var(--hover-color);
+      }
+
+      button.primary {
+        background-color: var(--accent-color);
+        color: white;
+      }
+
+      button.primary:hover {
+        opacity: 0.9;
+      }
+
+      button.danger {
+        color: var(--danger-color);
+      }
+
+      button.danger:hover {
+        background-color: rgba(242, 72, 34, 0.1);
+      }
+
+      button svg {
+        margin-right: 4px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 12px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .toolbar-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .collection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 12px;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid transparent;
+        color: var(--secondary-color);
+      }
+      
+      .active-collection .collection-header {
+        color: var(--text-color);
+        background-color: var(--active-color);
+      }
+      
+      .collection-dimensions {
+        margin-left: auto;
+        font-size: 9px;
+        color: var(--secondary-color);
+        margin-right: 8px;
+      }
+
+      .collection-header:hover {
+        background-color: var(--hover-color);
+      }
+
+      .collection-header .arrow {
+        transition: transform 0.2s;
+      }
+
+      .collection-header .arrow.expanded {
+        transform: rotate(90deg);
+      }
+
+      .collection-name {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+      }
+
+      .collection-actions {
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .collection-header:hover .collection-actions {
+        opacity: 1;
+      }
+
+      .collection-content {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.3s ease-out;
+      }
+
+      .collection-content.expanded {
+        max-height: 1000px;
+      }
+      
+      .arrow {
+        transform: rotate(90deg);
+        transition: transform 0.3s ease;
+        display: inline-block;
+        margin-left: 4px;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+      
+      .arrow.expanded {
+        transform: rotate(180deg);
+      }
+
+      .presets-list {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 4px 0;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .preset-card {
+        border-bottom: 1px solid var(--border-color);
+        padding: 8px 12px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+        gap: 12px;
+      }
+      
+      .preset-preview {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .frame-visual {
+  border-radius: 2px;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+  
+  /* Fixed square container */
+  width: 28px;
+  height: 28px;
+  
+  /* Force square aspect ratio */
+  aspect-ratio: 1 / 1;
+  
+  /* Ensure content is centered and contained */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  
+  /* Styling */
+  background-color: rgba(13, 153, 255, 0.2); 
+  border: 1px solid rgba(13, 153, 255, 0.4);
+  
+  /* Center the frame visual */
+  margin: 0 auto;
+}
+
+
+      .preset-name {
+        flex-grow: 1;
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--text-primary);
+      }
+      
+      .preset-info {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+      }
+      
+      .preset-dimensions-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+      }
+      
+      .preset-dimensions {
+        font-size: 10px;
+        color: var(--text-secondary);
+      }
+      
+      .preset-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+      
+      .favorite-btn, .delete-preset-btn {
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 4px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: color 0.2s, background-color 0.2s;
+        margin: 0;
+      }
+      
+      .favorite-btn {
+        color: var(--text-secondary);
+      }
+      
+      .favorite-btn.active {
+        color: var(--primary-color);
+      }
+      
+      .favorite-btn svg {
+        stroke: currentColor;
+        stroke-width: 1.5px;
+      }
+      
+      .favorite-btn:hover, .delete-preset-btn:hover {
+        background-color: var(--hover-color);
+      }
+      
+      .delete-preset-btn {
+        color: var(--text-secondary);
+      }
+      
+      .delete-preset-btn:hover {
+        color: var(--error-color);
+      }
+      
+      .preset-name {
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .preset-card:hover {
+        background-color: var(--hover-color);
+      }
+
+      .preset-preview {
+        background-color: var(--active-color);
+        border-radius: 2px;
+        margin-bottom: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        aspect-ratio: 16/9;
+        overflow: hidden;
+      }
+
+      .frame-visual {
+        margin-bottom: 4px;
+        box-shadow: 0 1px 3px var(--shadow-color);
+      }
+      
+      .frame-dimensions {
+        font-size: 9px;
+        color: var(--secondary-color);
+        text-align: center;
+      }
+
+      .preset-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .preset-name {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80%;
+      }
+
+      .preset-dimensions {
+        font-size: 9px;
+        color: var(--text-secondary);
+        margin-right: 4px;
+      }
+
+      .favorite-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: var(--bg-color);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 10;
+        transition: opacity 0.2s;
+        padding: 0;
+      }
+
+      .preset-card:hover .favorite-btn {
+        opacity: 1;
+      }
+
+      .favorite-btn.active {
+        opacity: 1;
+        color: #f2c94c;
+      }
+
+      .status-bar {
+        border-top: 1px solid var(--border-color);
+        padding: 8px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+      }
+
+      .sync-status {
+        font-size: 10px;
+        color: var(--secondary-color);
+      }
+
+      .theme-toggle {
+        cursor: pointer;
+        color: var(--secondary-color);
+      }
+
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+
+      .modal.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal-content {
+        background-color: var(--bg-color);
+        border-radius: 4px;
+        padding: 16px;
+        width: 90%;
+        max-width: 300px;
+        box-shadow: 0 4px 12px var(--shadow-color);
+      }
+
+      .modal-header {
+        font-weight: 600;
+        margin-bottom: 16px;
+        font-size: 12px;
+      }
+
+      .form-group {
+        margin-bottom: 12px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .favorites-section {
+        border-bottom: 1px solid var(--border-color);
+        max-height: 30vh;
+        overflow-y: auto;
+      }
+
+      .empty-state {
+        padding: 16px;
+        text-align: center;
+        color: var(--secondary-color);
+        font-size: 11px;
+      }
+
+      .share-modal .share-link {
+        background-color: var(--active-color);
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin: 10px 0;
+        word-break: break-all;
+      }
+
+      .copy-btn {
+        margin-top: 8px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Loading animation */
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+      }
+
+      .loading-spinner {
+        border: 2px solid var(--border-color);
+        border-top: 2px solid var(--accent-color);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="header">
+        <h3>Frame Presets</h3>
+        <div>
+          <button id="create-preset-btn" class="primary">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 1V11M1 6H11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Save Current Frame
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-buttons">
+        <button id="new-collection-btn">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 1V11M1 6H11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          New Collection
+        </button>
+        <button id="import-btn">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M1 9L1 10C1 10.5523 1.44772 11 2 11L10 11C10.5523 11 11 10.5523 11 10L11 9M6 8L6 1M6 8L3.5 5.5M6 8L8.5 5.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Import
+        </button>
+      </div>
+      <button id="sync-btn">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M1 5.5C1 3.29086 2.79086 1.5 5 1.5C6.48052 1.5 7.77308 2.30205 8.46922 3.5M11 6.5C11 8.70914 9.20914 10.5 7 10.5C5.51948 10.5 4.22692 9.69795 3.53078 8.5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <path
+            d="M9.5 1.5L8.5 3.5L10.5 3.5M2.5 10.5L3.5 8.5L1.5 8.5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Sync
+      </button>
+    </div>
+
+
+    <div id="collections-container">
+      <!-- Collections will be added here dynamically -->
+      <div class="loading">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="sync-status">Last synced: Never</div>
+      <div class="theme-toggle" id="theme-toggle">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M7 1.5V1M7 13V12.5M12.5 7H13M1 7H1.5M10.8995 3.1005L11.2497 2.7503M2.7503 11.2497L3.1005 10.8995M10.8995 10.8995L11.2497 11.2497M2.7503 2.7503L3.1005 3.1005M9.5 7C9.5 8.38071 8.38071 9.5 7 9.5C5.61929 9.5 4.5 8.38071 4.5 7C4.5 5.61929 5.61929 4.5 7 4.5C8.38071 4.5 9.5 5.61929 9.5 7Z"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+    </div>
+    </div><!-- End of sidebar -->
+
+    <!-- Create Collection Modal -->
+    <div class="modal" id="new-collection-modal">
+      <div class="modal-content">
+        <div class="modal-header">Create New Collection</div>
+        <div class="form-group">
+          <label for="collection-name">Collection Name</label>
+          <input
+            type="text"
+            id="collection-name"
+            placeholder="e.g., Web Banners"
+          />
+        </div>
+        <div class="form-actions">
+          <button id="cancel-collection-btn">Cancel</button>
+          <button id="save-collection-btn" class="primary">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Preset Modal -->
+    <div class="modal" id="create-preset-modal">
+      <div class="modal-content">
+        <div class="modal-header">Save Frame Preset</div>
+        <div id="preset-frames-container">
+          <!-- Frame inputs will be added here dynamically -->
+        </div>
+        <div class="form-actions">
+          <button id="cancel-preset-btn">Cancel</button>
+          <button id="save-preset-btn" class="primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Share Collection Modal -->
+    <div class="modal share-modal" id="share-collection-modal">
+      <div class="modal-content">
+        <div class="modal-header">Share Collection</div>
+        <p>Share this ID with others to let them import your collection:</p>
+        <div class="share-link" id="share-link">...</div>
+        <button id="copy-share-link" class="copy-btn primary">
+          Copy to Clipboard
+        </button>
+        <div class="form-actions">
+          <button id="close-share-modal-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Collection Modal -->
+    <div class="modal" id="import-collection-modal">
+      <div class="modal-content">
+        <div class="modal-header">Import Collection</div>
+        <div class="form-group">
+          <label for="import-id">Collection ID</label>
+          <input
+            type="text"
+            id="import-id"
+            placeholder="Paste collection ID here"
+          />
+        </div>
+        <div class="form-actions">
+          <button id="cancel-import-btn">Cancel</button>
+          <button id="import-collection-btn" class="primary">Import</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase Configuration Modal -->
+    <div class="modal" id="supabase-config-modal">
+      <div class="modal-content">
+        <div class="modal-header">Supabase Configuration</div>
+        <div class="form-group">
+          <label for="supabase-url">Supabase URL</label>
+          <input
+            type="text"
+            id="supabase-url"
+            placeholder="https://your-project.supabase.co"
+          />
+        </div>
+        <div class="form-group">
+          <label for="supabase-key">Supabase Anon Key</label>
+          <input type="text" id="supabase-key" placeholder="your-anon-key" />
+        </div>
+        <div class="form-actions">
+          <button id="cancel-supabase-btn">Cancel</button>
+          <button id="save-supabase-btn" class="primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // Global state
+      // ============================================================
+      let pluginData = {
+        collections: [],
+        activeCollectionId: null,
+        lastSyncedAt: null,
+      };
+
+      let theme = "light";
+      let supabaseConfig = {
+        url: null,
+        key: null,
+      };
+
+      // Supabase client initialization
+      let supabaseClient = null;
+
+      async function initSupabase(url, key) {
+        try {
+          supabaseClient = supabase.createClient(url, key);
+          return true;
+        } catch (error) {
+          console.error("Failed to initialize Supabase:", error);
+          return false;
+        }
+      }
+
+      // ============================================================
+      // DOM Elements
+      // ============================================================
+      const collectionsContainer = document.getElementById(
+        "collections-container"
+      );
+      const themeToggle = document.getElementById("theme-toggle");
+      const syncBtn = document.getElementById("sync-btn");
+      const createPresetBtn = document.getElementById("create-preset-btn");
+      const newCollectionBtn = document.getElementById("new-collection-btn");
+      const importBtn = document.getElementById("import-btn");
+
+      // Modal elements
+      const newCollectionModal = document.getElementById(
+        "new-collection-modal"
+      );
+      const collectionNameInput = document.getElementById("collection-name");
+      const saveCollectionBtn = document.getElementById("save-collection-btn");
+      const cancelCollectionBtn = document.getElementById(
+        "cancel-collection-btn"
+      );
+
+      const createPresetModal = document.getElementById("create-preset-modal");
+      const presetFramesContainer = document.getElementById(
+        "preset-frames-container"
+      );
+      const savePresetBtn = document.getElementById("save-preset-btn");
+      const cancelPresetBtn = document.getElementById("cancel-preset-btn");
+
+      const shareCollectionModal = document.getElementById(
+        "share-collection-modal"
+      );
+      const shareLink = document.getElementById("share-link");
+      const copyShareLinkBtn = document.getElementById("copy-share-link");
+      const closeShareModalBtn = document.getElementById(
+        "close-share-modal-btn"
+      );
+
+      const importCollectionModal = document.getElementById(
+        "import-collection-modal"
+      );
+      const importIdInput = document.getElementById("import-id");
+      const importCollectionBtn = document.getElementById(
+        "import-collection-btn"
+      );
+      const cancelImportBtn = document.getElementById("cancel-import-btn");
+
+      const supabaseConfigModal = document.getElementById(
+        "supabase-config-modal"
+      );
+      const supabaseUrlInput = document.getElementById("supabase-url");
+      const supabaseKeyInput = document.getElementById("supabase-key");
+      const saveSupabaseBtn = document.getElementById("save-supabase-btn");
+      const cancelSupabaseBtn = document.getElementById("cancel-supabase-btn");
+
+      // ============================================================
+      // Helper Functions
+      // ============================================================
+
+      // Show a modal
+      function showModal(modal) {
+        modal.classList.add("active");
+      }
+
+      // Hide a modal
+      function hideModal(modal) {
+        modal.classList.remove("active");
+      }
+
+      // Generate a unique ID
+      function generateId() {
+        return Date.now().toString();
+      }
+
+      // Toggle collection expansion
+      function toggleCollection(collectionId) {
+        const arrow = document.querySelector(
+          `.collection-${collectionId} .arrow`
+        );
+        const content = document.querySelector(
+          `.collection-content-${collectionId}`
+        );
+
+        arrow.classList.toggle("expanded");
+        content.classList.toggle("expanded");
+      }
+
+      // Toggle theme
+      function toggleTheme() {
+        if (theme === "light") {
+          document.body.setAttribute("data-theme", "dark");
+          theme = "dark";
+        } else {
+          document.body.removeAttribute("data-theme");
+          theme = "light";
+        }
+
+        // Save theme preference
+        parent.postMessage(
+          { pluginMessage: { type: "theme-preference", theme } },
+          "*"
+        );
+      }
+
+      // Format dimensions for display
+      function formatDimensions(width, height) {
+        return `${Math.round(width)} × ${Math.round(height)}`;
+      }
+
+      // Supabase Integration
+      async function setupSupabase() {
+        if (!supabaseConfig.url || !supabaseConfig.key) {
+          showModal(supabaseConfigModal);
+          return false;
+        }
+        return true;
+      }
+
+      // Create Supabase client
+      function createSupabaseClient() {
+        // This is a simplified version since we can't include the actual Supabase client library
+        // In a real implementation, you would use the Supabase JS client
+        return {
+          from: (table) => {
+            return {
+              select: () => Promise.resolve([]),
+              insert: (data) => Promise.resolve(data),
+              update: (data) => Promise.resolve(data),
+              delete: () => Promise.resolve(true),
+              eq: () => this,
+            };
+          },
+          auth: {
+            getSession: () => Promise.resolve(null),
+          },
+        };
+      }
+
+      // Sync data to Supabase
+      async function syncToSupabase() {
+        if (!supabaseClient) {
+          const url = supabaseUrlInput.value.trim();
+          const key = supabaseKeyInput.value.trim();
+
+          if (!url || !key) {
+            showModal(supabaseConfigModal);
+            return false;
+          }
+
+          const success = await initSupabase(url, key);
+          if (!success) {
+            alert("Failed to initialize Supabase");
+            return false;
+          }
+
+          // Save config using Figma's storage via message passing
+          parent.postMessage({
+            pluginMessage: {
+              type: "save-supabase-config",
+              url: url,
+              key: key
+            }
+          }, "*");
+        }
+
+        try {
+          const { data, error } = await supabaseClient
+            .from("collections")
+            .upsert(
+              pluginData.collections.map((collection) => ({
+                id: collection.id,
+                name: collection.name,
+                presets: collection.presets,
+                is_built_in: collection.isBuiltIn || false,
+              }))
+            );
+
+          if (error) throw error;
+
+          // Update sync status
+          const now = new Date();
+          document.querySelector(
+            ".sync-status"
+          ).textContent = `Last synced: ${now.toLocaleTimeString()}`;
+          pluginData.lastSyncedAt = now.getTime();
+
+          // Notify Figma
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "sync-to-supabase",
+                success: true,
+              },
+            },
+            "*"
+          );
+
+          return true;
+        } catch (error) {
+          console.error("Sync error:", error);
+          return false;
+        }
+      }
+
+      // Add function to import from Supabase
+      async function importFromSupabase() {
+        if (!supabaseClient) {
+          alert("Please configure Supabase first");
+          return;
+        }
+
+        try {
+          const { data, error } = await supabaseClient
+            .from("collections")
+            .select("*")
+            .order("created_at", { ascending: true });
+
+          if (error) throw error;
+
+          // Merge with existing collections, avoiding duplicates
+          const existingIds = new Set(pluginData.collections.map((c) => c.id));
+          const newCollections = data.filter((c) => !existingIds.has(c.id));
+
+          pluginData.collections = [
+            ...pluginData.collections,
+            ...newCollections,
+          ];
+
+          // Update UI
+          renderCollections();
+
+          // Notify Figma
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "update",
+                data: pluginData,
+              },
+            },
+            "*"
+          );
+
+          return true;
+        } catch (error) {
+          console.error("Import error:", error);
+          return false;
+        }
+      }
+
+      // ============================================================
+      // Rendering Functions
+      // ============================================================
+
+      // Render all collections
+      function renderCollections() {
+        collectionsContainer.innerHTML = "";
+        
+        // Check if pluginData exists before proceeding
+        if (!pluginData || !pluginData.collections) {
+          collectionsContainer.innerHTML = `<div class="empty-state">Loading collections...</div>`;
+          return;
+        }
+
+        // Create a virtual Favorites collection at the top
+        const favorites = [];
+        
+        // Get all favorite presets across collections
+        pluginData.collections.forEach((collection) => {
+          collection.presets.forEach((preset) => {
+            if (preset.isFavorite) {
+              favorites.push({
+                ...preset,
+                collectionId: collection.id,
+                collectionName: collection.name,
+              });
+            }
+          });
+        });
+        
+        // Add Favorites as a virtual collection
+        if (favorites.length > 0) {
+          const favoritesEl = document.createElement("div");
+          favoritesEl.classList.add(`collection`);
+          favoritesEl.classList.add(`collection-favorites`);
+          
+          // Create favorites collection header
+          favoritesEl.innerHTML = `
+          <div class="collection-header" data-id="favorites">
+            <div class="collection-name">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px">
+                <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              Favorites
+            </div>
+            <div class="arrow expanded">›</div>
+          </div>
+          <div class="collection-content expanded" data-collection-id="favorites">
+            <div class="presets-list">
+              ${favorites.map(preset => `
+                <div class="preset-card" data-id="${preset.id}" data-collection="${preset.collectionId}">
+                  <div class="preset-preview">
+                    <div class="frame-visual" style="width: 24px; height: 0; padding-bottom: ${(preset.height/preset.width) * 24}px; background-color: rgba(13, 153, 255, 0.2); border: 1px solid rgba(13, 153, 255, 0.4);"></div>
+                  </div>
+                  <div class="preset-info">
+                    <div class="preset-name">${preset.name}</div>
+                    <div class="preset-dimensions-row">
+                      <button class="favorite-btn active" data-id="${preset.id}" data-collection="${preset.collectionId}">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                      </button>
+                      <div class="preset-dimensions">${formatDimensions(preset.width, preset.height)}</div>
+                    </div>
+                  </div>
+                  <div class="preset-actions">
+                    <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${preset.collectionId}">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 3H10M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          `;
+          
+          collectionsContainer.appendChild(favoritesEl);
+        }
+
+        // Then render all regular collections
+        pluginData.collections.forEach((collection) => {
+          const isActive = collection.id === pluginData.activeCollectionId;
+          const collectionEl = document.createElement("div");
+          collectionEl.classList.add(`collection`);
+          collectionEl.classList.add(`collection-${collection.id}`);
+          
+          // Add active class if this collection is active
+          if (isActive) {
+            collectionEl.classList.add('active-collection');
+          }
+
+          // Create collection header in a style similar to the screenshot
+          collectionEl.innerHTML = `
+          <div class="collection-header" data-id="${collection.id}">
+            <div class="collection-name">
+              ${collection.name}
+            </div>
+            ${!collection.isBuiltIn ? `
+            <div class="collection-actions">
+              <button class="share-collection-btn" data-id="${collection.id}">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(9 1)"/>
+                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(9 9)"/>
+                  <path d="M3 6C3 7.10457 2.10457 8 1 8C-0.104569 8 -1 7.10457 -1 6C-1 4.89543 -0.104569 4 1 4C2.10457 4 3 4.89543 3 6Z" stroke="currentColor" stroke-width="1.5" transform="translate(1 5)"/>
+                  <path d="M0 0L4 2.5M4 2.5L0 5M4 2.5L8 0M4 2.5L8 5" stroke="currentColor" stroke-width="1.5" transform="translate(2 3.5)"/>
+                </svg>
+              </button>
+              <button class="delete-collection-btn" data-id="${collection.id}">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 3H11M4 3V2C4 1.44772 4.44772 1 5 1H7C7.55228 1 8 1.44772 8 2V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            ` : ''}
+            <div class="arrow">›</div>
+          </div>
+          <div class="collection-content" data-collection-id="${collection.id}">
+            <div class="presets-list">
+              ${collection.presets.length > 0
+                ? collection.presets
+                    .map(
+                      (preset) => `
+                <div class="preset-card" data-id="${preset.id}" data-collection="${collection.id}">
+                  <div class="preset-preview">
+                    <div class="frame-visual" style="width: 24px; height: 0; padding-bottom: ${(preset.height/preset.width) * 24}px; background-color: rgba(13, 153, 255, 0.2); border: 1px solid rgba(13, 153, 255, 0.4);"></div>
+                  </div>
+                  <div class="preset-info">
+                    <div class="preset-name">${preset.name}</div>
+                    <div class="preset-dimensions-row">
+                      <button class="favorite-btn ${preset.isFavorite ? "active" : ""}" data-id="${preset.id}" data-collection="${collection.id}">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="${preset.isFavorite ? "currentColor" : "none"}" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="${preset.isFavorite ? "currentColor" : "transparent"}" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                      </button>
+                      <div class="preset-dimensions">${formatDimensions(preset.width, preset.height)}</div>
+                    </div>
+                  </div>
+                  ${!collection.isBuiltIn ? `
+                  <div class="preset-actions">
+                    <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${collection.id}">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 3H10M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                    </button>
+                  </div>
+                  ` : ''}                </div>
+              `
+                      )
+                      .join("")
+                  : `<div class="empty-state">No presets in this collection. Create one using the "Save Current Frame" button.</div>`
+              }
+            </div>
+          </div>
+        `;
+
+          collectionsContainer.appendChild(collectionEl);
+        });
+
+        // Set up event listeners for the newly created elements
+        setupCollectionEventListeners();
+      }
+
+      // Favorites are now handled directly inside the renderCollections function
+
+      // Set up event listeners for collection elements
+      function setupCollectionEventListeners() {
+        // Collection header click - makes collection active and toggles expansion
+        document.querySelectorAll('.collection-header').forEach(header => {
+          header.addEventListener('click', (e) => {
+            // Stop event propagation to prevent any parent handlers from firing
+            e.stopPropagation();
+            
+            // Skip if clicking on action buttons
+            if (e.target.closest('.collection-actions') || e.target.closest('button')) {
+              return;
+            }
+            
+            const collectionId = header.getAttribute('data-id');
+            if (collectionId) {
+              // First handle the UI expansion
+              // Toggle arrow state
+              const arrow = header.querySelector('.arrow');
+              if (arrow) {
+                arrow.classList.toggle('expanded');
+              }
+              
+              // Find and toggle the associated content div by data attribute
+              const contentDiv = document.querySelector(`.collection-content[data-collection-id="${collectionId}"]`);
+              if (contentDiv) {
+                contentDiv.classList.toggle('expanded');
+              }
+              
+              // Then notify Figma about active collection change
+              parent.postMessage({
+                pluginMessage: {
+                  type: "set-active-collection",
+                  collectionId: collectionId,
+                  // Add a flag to indicate this is just an active state change, not a full refresh
+                  preserveUIState: true
+                }
+              }, "*");
+            }
+          });
+        });
+
+        // Delete collection
+        document.querySelectorAll(".delete-collection-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const collectionId = btn.getAttribute("data-id");
+
+            if (confirm("Are you sure you want to delete this collection?")) {
+              // Notify Figma
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: "delete-collection",
+                    collectionId: collectionId,
+                  },
+                },
+                "*"
+              );
+            }
+          });
+        });
+
+        // Share collection
+        document.querySelectorAll(".share-collection-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const collectionId = btn.getAttribute("data-id");
+            shareCollection(collectionId);
+          });
+        });
+
+        // Preset card click (use preset)
+        document.querySelectorAll(".preset-card").forEach((card) => {
+          card.addEventListener("click", (e) => {
+            // Don't use preset if clicking the favorite button
+            if (e.target.closest(".favorite-btn")) return;
+
+            const presetId = card.dataset.id;
+            const collectionId = card.dataset.collection;
+
+            const collection = pluginData.collections.find(
+              (c) => c.id === collectionId
+            );
+            if (!collection) return;
+
+            const preset = collection.presets.find((p) => p.id === presetId);
+            if (!preset) return;
+
+            // Notify Figma to use this preset
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "use-preset",
+                  preset,
+                },
+              },
+              "*"
+            );
+          });
+        });
+
+        // Favorite button click
+        document.querySelectorAll(".favorite-btn").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const presetId = e.currentTarget.dataset.id;
+            const collectionId = e.currentTarget.dataset.collection;
+
+            // Notify Figma
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "toggle-favorite",
+                  presetId,
+                  collectionId,
+                },
+              },
+              "*"
+            );
+          });
+        });
+      }
+
+      // ============================================================
+      // Event Listeners
+      // ============================================================
+
+      // Theme toggle
+      themeToggle.addEventListener("click", toggleTheme);
+
+      // Create new collection
+      newCollectionBtn.addEventListener("click", () => {
+        collectionNameInput.value = "";
+        showModal(newCollectionModal);
+      });
+
+      // Save new collection
+      saveCollectionBtn.addEventListener("click", () => {
+        const name = collectionNameInput.value.trim();
+        if (!name) return;
+
+        // Notify Figma
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "create-collection",
+              name,
+            },
+          },
+          "*"
+        );
+
+        hideModal(newCollectionModal);
+      });
+
+      // Cancel new collection
+      cancelCollectionBtn.addEventListener("click", () => {
+        hideModal(newCollectionModal);
+      });
+
+      // Create preset
+      createPresetBtn.addEventListener("click", () => {
+        // Check if we have an active collection
+        if (!pluginData.activeCollectionId) {
+          alert("Please select an active collection first");
+          return;
+        }
+
+        // Request current selection from Figma
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "create-preset",
+            },
+          },
+          "*"
+        );
+      });
+
+      // Save preset
+      savePresetBtn.addEventListener("click", () => {
+        const frames = [];
+
+        // Get all frame inputs
+        document.querySelectorAll(".frame-input-group").forEach((group) => {
+          const nameInput = group.querySelector(".frame-name-input");
+          const widthInput = group.querySelector(".frame-width-input");
+          const heightInput = group.querySelector(".frame-height-input");
+
+          frames.push({
+            name: nameInput.value.trim(),
+            width: parseFloat(widthInput.value),
+            height: parseFloat(heightInput.value),
+          });
+        });
+
+        // Validate
+        const validFrames = frames.filter(
+          (frame) => frame.name && !isNaN(frame.width) && !isNaN(frame.height)
+        );
+
+        if (validFrames.length === 0) {
+          alert("Please provide valid names and dimensions");
+          return;
+        }
+
+        // Create preset for each valid frame
+        validFrames.forEach((frame) => {
+          const preset = {
+            id: generateId(),
+            name: frame.name,
+            width: frame.width,
+            height: frame.height,
+            isFavorite: false,
+            dateCreated: Date.now(),
+          };
+
+          // Notify Figma
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "save-preset",
+                preset,
+                collectionId: pluginData.activeCollectionId,
+              },
+            },
+            "*"
+          );
+        });
+
+        hideModal(createPresetModal);
+      });
+
+      // Cancel preset
+      cancelPresetBtn.addEventListener("click", () => {
+        hideModal(createPresetModal);
+      });
+
+      // Import button
+      importBtn.addEventListener("click", () => {
+        importIdInput.value = "";
+        showModal(importCollectionModal);
+      });
+
+      // Import collection
+      importCollectionBtn.addEventListener("click", async () => {
+        const success = await importFromSupabase();
+        if (success) {
+          hideModal(importCollectionModal);
+          alert("Collections imported successfully");
+        } else {
+          alert("Failed to import collections");
+        }
+      });
+
+      // Cancel import
+      cancelImportBtn.addEventListener("click", () => {
+        hideModal(importCollectionModal);
+      });
+
+      // Copy share link
+      copyShareLinkBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(shareLink.textContent);
+        copyShareLinkBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyShareLinkBtn.textContent = "Copy to Clipboard";
+        }, 2000);
+      });
+
+      // Close share modal
+      closeShareModalBtn.addEventListener("click", () => {
+        hideModal(shareCollectionModal);
+      });
+
+      // Sync button
+      syncBtn.addEventListener("click", async () => {
+        const success = await syncToSupabase();
+        if (success) {
+          alert("Sync completed successfully");
+        }
+      });
+
+      // Save Supabase config
+      saveSupabaseBtn.addEventListener("click", () => {
+        const url = supabaseUrlInput.value.trim();
+        const key = supabaseKeyInput.value.trim();
+
+        if (!url || !key) {
+          alert("Please enter both URL and key");
+          return;
+        }
+
+        supabaseConfig = { url, key };
+        hideModal(supabaseConfigModal);
+
+        // After config, try syncing again
+        syncToSupabase();
+      });
+
+      // Cancel Supabase config
+      cancelSupabaseBtn.addEventListener("click", () => {
+        hideModal(supabaseConfigModal);
+      });
+
+      // Load saved Supabase config on startup
+      window.addEventListener("load", () => {
+        // Request Supabase config from plugin instead of using localStorage
+        parent.postMessage({
+          pluginMessage: {
+            type: "get-supabase-config"
+          }
+        }, "*");
+      });
+
+      // ============================================================
+      // Message handling from Figma
+      // ============================================================
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+
+        if (!msg) return;
+
+        switch (msg.type) {
+          case "init":
+            // Initialize with data from Figma
+            if (msg.data && msg.data.collections) {
+              console.log("Received plugin data:", msg.data);
+              pluginData = msg.data;
+              renderCollections();
+            } else {
+              console.error("Received invalid plugin data:", msg.data);
+              // Set a default empty state if no valid data is received
+              collectionsContainer.innerHTML = `<div class="empty-state">Could not load collections. Please restart the plugin.</div>`;
+            }
+            break;
+
+          case "update":
+            // Update data from Figma
+            pluginData = msg.data;
+            renderCollections();
+            break;
+            
+          case "active-collection-changed":
+            // Only update the active collection state without rerendering
+            if (pluginData) {
+              pluginData.activeCollectionId = msg.collectionId;
+              
+              // Just update the visual active state without full re-render
+              document.querySelectorAll('.collection').forEach(coll => {
+                if (coll.classList.contains(`collection-${msg.collectionId}`)) {
+                  coll.classList.add('active-collection');
+                } else {
+                  coll.classList.remove('active-collection');
+                }
+              });
+            }
+            break;
+
+          case "supabase-config":
+            // Received Supabase configuration from plugin
+            if (msg.config && msg.config.url && msg.config.key) {
+              supabaseUrlInput.value = msg.config.url;
+              supabaseKeyInput.value = msg.config.key;
+              initSupabase(msg.config.url, msg.config.key);
+            }
+            break;
+            
+          case "selection-data":
+            // Received frame data for preset creation
+            presetFramesContainer.innerHTML = "";
+
+            if (msg.frames && msg.frames.length > 0) {
+              msg.frames.forEach((frame) => {
+                const frameGroup = document.createElement("div");
+                frameGroup.classList.add("form-group", "frame-input-group");
+
+                frameGroup.innerHTML = `
+                <label>Frame: ${formatDimensions(
+                  frame.width,
+                  frame.height
+                )}</label>
+                <input type="text" class="frame-name-input" value="${
+                  frame.name
+                }" placeholder="Preset name">
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <input type="number" class="frame-width-input" value="${Math.round(
+                    frame.width
+                  )}" placeholder="Width">
+                  <input type="number" class="frame-height-input" value="${Math.round(
+                    frame.height
+                  )}" placeholder="Height">
+                </div>
+              `;
+
+                presetFramesContainer.appendChild(frameGroup);
+              });
+
+              showModal(createPresetModal);
+            } else {
+              alert("No frames in selection");
+            }
+            break;
+        }
+      };
+
+      // Signal to Figma that the UI is ready
+      parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
+    </script>
+  </body>
+</html>
