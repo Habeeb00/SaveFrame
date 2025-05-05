@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // Types
 interface FramePreset {
+  
   id: string;
   name: string;
   width: number;

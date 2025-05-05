@@ -1062,6 +1062,29 @@
       </div>
     </div>
 
+    <!-- Authentication Modal -->
+    <div class="modal" id="auth-modal">
+      <div class="modal-content">
+        <div class="modal-header">Authentication Required</div>
+        <div id="auth-form-container">
+          <p class="auth-message">Please sign in to sync your collections</p>
+          <div class="oauth-buttons">
+            <button id="google-signin-btn" class="google-button">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png"
+                alt="Google"
+                style="width: 16px; height: 16px; margin-right: 8px"
+              />
+              Sign in with Google
+            </button>
+          </div>
+          <div class="form-actions" style="margin-top: 16px">
+            <button id="cancel-auth-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       // ============================================================
       // Global state
@@ -1083,7 +1106,13 @@
 
       async function initSupabase(url, key) {
         try {
-          supabaseClient = supabase.createClient(url, key);
+          supabaseClient = supabase.createClient(url, key, {
+            auth: {
+              autoRefreshToken: true,
+              persistSession: true,
+              detectSessionInUrl: true,
+            },
+          });
           return true;
         } catch (error) {
           console.error("Failed to initialize Supabase:", error);
@@ -1149,6 +1178,11 @@
       const supabaseKeyInput = document.getElementById("supabase-key");
       const saveSupabaseBtn = document.getElementById("save-supabase-btn");
       const cancelSupabaseBtn = document.getElementById("cancel-supabase-btn");
+
+      // Auth Modal elements
+      const authModal = document.getElementById("auth-modal");
+      const googleSigninBtn = document.getElementById("google-signin-btn");
+      const cancelAuthBtn = document.getElementById("cancel-auth-btn");
 
       // ============================================================
       // Helper Functions
@@ -1263,7 +1297,7 @@
 
           const success = await initSupabase(url, key);
           if (!success) {
-            alert("Failed to initialize Supabase");
+            showErrorMessage("Failed to initialize Supabase");
             return false;
           }
 
@@ -1281,18 +1315,77 @@
         }
 
         try {
-          const { data, error } = await supabaseClient
-            .from("collections")
-            .upsert(
-              pluginData.collections.map((collection) => ({
-                id: collection.id,
-                name: collection.name,
-                presets: collection.presets,
-                is_built_in: collection.isBuiltIn || false,
-              }))
-            );
+          // First check if we have an authenticated session
+          const { data: authData, error: sessionError } =
+            await supabaseClient.auth.getSession();
 
-          if (error) throw error;
+          console.log(
+            "Auth check result:",
+            sessionError ? "Error" : "Success",
+            authData
+          );
+
+          // If there's no valid session, show the auth modal
+          if (sessionError || !authData.session || !authData.session.user) {
+            console.log("No active session found, authentication required");
+            showModal(authModal);
+            return false;
+          }
+
+          const userId = authData.session.user.id;
+          console.log("User authenticated with ID:", userId);
+
+          // Delete existing non-built-in collections first
+          const { error: deleteError } = await supabaseClient
+            .from("collections")
+            .delete()
+            .eq("user_id", userId)
+            .not("is_built_in", true);
+
+          if (deleteError) {
+            console.error("Error deleting existing collections:", deleteError);
+            showErrorMessage("Error during sync: " + deleteError.message);
+            return false;
+          }
+
+          // Prepare collections data with user_id
+          const collectionsToSync = pluginData.collections
+            .filter((collection) => !collection.isBuiltIn)
+            .map((collection) => ({
+              id: collection.id,
+              name: collection.name,
+              presets: collection.presets,
+              is_built_in: collection.isBuiltIn || false,
+              user_id: userId, // Explicitly set user_id to match authenticated user
+              last_synced_at: new Date().toISOString(),
+            }));
+
+          console.log("Syncing collections:", collectionsToSync.length);
+
+          // If no collections to sync, just return success
+          if (collectionsToSync.length === 0) {
+            // Update sync status even though no data was synced
+            const now = new Date();
+            document.querySelector(
+              ".sync-status"
+            ).textContent = `Last synced: ${now.toLocaleTimeString()}`;
+            pluginData.lastSyncedAt = now.getTime();
+            return true;
+          }
+
+          // Insert collections with user_id
+          const { error: upsertError } = await supabaseClient
+            .from("collections")
+            .upsert(collectionsToSync, {
+              onConflict: "id", // Handle conflicts by ID
+              ignoreDuplicates: false, // Update existing records
+            });
+
+          if (upsertError) {
+            console.error("Upsert error:", upsertError);
+            showErrorMessage("Error during sync: " + upsertError.message);
+            return false;
+          }
 
           // Update sync status
           const now = new Date();
@@ -1315,6 +1408,7 @@
           return true;
         } catch (error) {
           console.error("Sync error:", error);
+          showErrorMessage("Failed to sync: " + error.message);
           return false;
         }
       }
@@ -1322,22 +1416,62 @@
       // Add function to import from Supabase
       async function importFromSupabase() {
         if (!supabaseClient) {
-          alert("Please configure Supabase first");
-          return;
+          showErrorMessage("Please configure Supabase first");
+          return false;
         }
 
         try {
+          // First check if we have an authenticated session
+          const { data: authData, error: sessionError } =
+            await supabaseClient.auth.getSession();
+
+          console.log(
+            "Auth check result:",
+            sessionError ? "Error" : "Success",
+            authData
+          );
+
+          // If there's no valid session, show the auth modal
+          if (sessionError || !authData.session || !authData.session.user) {
+            console.log("No active session found, authentication required");
+            showModal(authModal);
+            return false;
+          }
+
+          const userId = authData.session.user.id;
+          console.log("User authenticated with ID:", userId);
+
+          // Only get collections that belong to this user (enforcing userId requirement)
           const { data, error } = await supabaseClient
             .from("collections")
             .select("*")
+            .eq("user_id", userId)
             .order("created_at", { ascending: true });
 
-          if (error) throw error;
+          if (error) {
+            console.error("Import query error:", error);
+            showErrorMessage("Error during import: " + error.message);
+            return false;
+          }
+
+          if (!data || data.length === 0) {
+            showErrorMessage("No collections found for your account");
+            return false;
+          }
+
+          console.log("Found collections to import:", data.length);
 
           // Merge with existing collections, avoiding duplicates
           const existingIds = new Set(pluginData.collections.map((c) => c.id));
           const newCollections = data.filter((c) => !existingIds.has(c.id));
 
+          // If all collections exist already
+          if (newCollections.length === 0) {
+            showErrorMessage("All collections already exist in your workspace");
+            return true;
+          }
+
+          // Add the collections
           pluginData.collections = [
             ...pluginData.collections,
             ...newCollections,
@@ -1360,6 +1494,184 @@
           return true;
         } catch (error) {
           console.error("Import error:", error);
+          showErrorMessage("Failed to import: " + error.message);
+          return false;
+        }
+      }
+
+      // Add function to import from Supabase using a share code
+      async function importSharedCollection() {
+        if (!supabaseClient) {
+          showErrorMessage("Please configure Supabase first");
+          // Focus the input field again
+          setTimeout(() => importIdInput.focus(), 10);
+          return false;
+        }
+
+        try {
+          // Get the share code from the input and save it in a variable
+          const shareCode = importIdInput.value.trim();
+          if (!shareCode) {
+            showErrorMessage("Please enter a valid share code");
+            // Focus the input field again
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
+
+          // Show loading state
+          importCollectionBtn.disabled = true;
+          importCollectionBtn.textContent = "Importing...";
+
+          // Debug log the actual input
+          console.log("Attempting import with code:", shareCode);
+
+          let query;
+          let queryType = "unknown";
+
+          // Check if the input is a full UUID in standard format (8-4-4-4-12 characters)
+          const uuidPattern =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+          if (uuidPattern.test(shareCode)) {
+            // If it's a full UUID, do an exact match
+            query = supabaseClient
+              .from("shared_collections")
+              .select("*")
+              .eq("share_id", shareCode);
+
+            queryType = "exact-uuid";
+            console.log("Using exact UUID match for:", shareCode);
+          } else {
+            // Otherwise, try the partial match approach
+            query = supabaseClient
+              .from("shared_collections")
+              .select("*")
+              .ilike("share_id", `${shareCode}%`);
+
+            queryType = "partial-match";
+            console.log("Using partial match for:", shareCode);
+          }
+
+          // Debug log the query before executing
+          console.log(`Executing ${queryType} query...`);
+
+          // Execute the query
+          const { data: sharedCollections, error: fetchError } = await query;
+
+          console.log("Query results:", {
+            queryType,
+            count: sharedCollections?.length || 0,
+            error: fetchError?.message,
+          });
+
+          // Restore button state
+          importCollectionBtn.disabled = false;
+          importCollectionBtn.textContent = "Import";
+
+          if (fetchError) {
+            console.error(
+              "Database error fetching shared collection:",
+              fetchError
+            );
+            showErrorMessage("Database error: " + fetchError.message);
+            // Focus the input field again
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
+
+          if (!sharedCollections || sharedCollections.length === 0) {
+            console.error("No collection found with ID:", shareCode);
+            showErrorMessage(
+              "Collection not found with this code. Make sure you entered it correctly."
+            );
+            // Focus the input field again
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
+
+          // Use the first result
+          const sharedCollection = sharedCollections[0];
+          console.log("Found collection:", sharedCollection?.name);
+
+          if (
+            !sharedCollection.presets ||
+            !Array.isArray(sharedCollection.presets)
+          ) {
+            console.error(
+              "Invalid collection format - missing presets:",
+              sharedCollection
+            );
+            showErrorMessage("The imported collection has an invalid format.");
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
+
+          // Check if this collection already exists
+          const collectionExists = pluginData.collections.some(
+            (c) => c.id === sharedCollection.collection_id
+          );
+
+          if (collectionExists) {
+            console.log("Collection already exists in workspace");
+            showErrorMessage("This collection is already in your workspace");
+            // Focus the input field again
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
+
+          // Create a new copy of the collection with a new ID to avoid conflicts
+          const newCollection = {
+            id: "collection-" + Date.now(), // New unique ID
+            name: sharedCollection.name + " (Shared)",
+            presets: sharedCollection.presets || [], // Ensure we have an array
+            isBuiltIn: false,
+          };
+
+          console.log("Created new collection object:", {
+            id: newCollection.id,
+            name: newCollection.name,
+            presetCount: newCollection.presets.length,
+          });
+
+          // Add the collection to the local data
+          pluginData.collections.push(newCollection);
+
+          // Update UI
+          console.log("Updating UI with new collection");
+          renderCollections();
+
+          // Notify Figma
+          console.log("Notifying Figma plugin code about new collection");
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "update",
+                data: pluginData,
+              },
+            },
+            "*"
+          );
+
+          // Close modal and show success message
+          hideModal(importCollectionModal);
+          showSuccessMessage("Collection imported successfully");
+
+          // Reset input for next time
+          importIdInput.value = "";
+
+          return true;
+        } catch (error) {
+          console.error("Import error:", error);
+          showErrorMessage(
+            "Failed to import: " + (error.message || "Unknown error")
+          );
+
+          // Restore button state
+          importCollectionBtn.disabled = false;
+          importCollectionBtn.textContent = "Import";
+
+          // Focus the input field again
+          setTimeout(() => importIdInput.focus(), 10);
           return false;
         }
       }
@@ -2042,7 +2354,7 @@
           document.querySelectorAll(".frame-input-group");
 
         if (frameInputGroups.length === 0) {
-          alert("No frames to save");
+          showErrorMessage("No frames to save");
           return;
         }
 
@@ -2127,12 +2439,12 @@
 
       // Import collection
       importCollectionBtn.addEventListener("click", async () => {
-        const success = await importFromSupabase();
+        const success = await importSharedCollection();
         if (success) {
           hideModal(importCollectionModal);
-          alert("Collections imported successfully");
+          showSuccessMessage("Collection imported successfully");
         } else {
-          alert("Failed to import collections");
+          showErrorMessage("Failed to import collection");
         }
       });
 
@@ -2143,12 +2455,66 @@
 
       // Copy share link
       copyShareLinkBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(shareLink.textContent);
-        copyShareLinkBtn.textContent = "Copied!";
-        setTimeout(() => {
-          copyShareLinkBtn.textContent = "Copy to Clipboard";
-        }, 2000);
+        try {
+          // Method 1: Modern Clipboard API
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(shareLink.textContent)
+              .then(() => {
+                copyShareLinkBtn.textContent = "Copied!";
+                setTimeout(() => {
+                  copyShareLinkBtn.textContent = "Copy to Clipboard";
+                }, 2000);
+              })
+              .catch((err) => fallbackCopyToClipboard(shareLink.textContent));
+          } else {
+            // Method 2: Selection and execCommand
+            fallbackCopyToClipboard(shareLink.textContent);
+          }
+        } catch (err) {
+          console.error("Copy failed:", err);
+          showErrorMessage(
+            "Failed to copy. Please select and copy the text manually."
+          );
+        }
       });
+
+      // Fallback copy method using selection
+      function fallbackCopyToClipboard(text) {
+        // Create temporary textarea
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; // Avoid scrolling to bottom
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          const successful = document.execCommand("copy");
+          if (successful) {
+            copyShareLinkBtn.textContent = "Copied!";
+            setTimeout(() => {
+              copyShareLinkBtn.textContent = "Copy to Clipboard";
+            }, 2000);
+          } else {
+            console.error("Copy command was unsuccessful");
+          }
+        } catch (err) {
+          console.error("Error during copy:", err);
+        }
+
+        document.body.removeChild(textArea);
+      }
 
       // Close share modal
       closeShareModalBtn.addEventListener("click", () => {
@@ -2159,7 +2525,7 @@
       syncBtn.addEventListener("click", async () => {
         const success = await syncToSupabase();
         if (success) {
-          alert("Sync completed successfully");
+          showSuccessMessage("Sync completed successfully");
         }
       });
 
@@ -2176,7 +2542,7 @@
 
           const success = await initSupabase(url, key);
           if (!success) {
-            alert("Failed to initialize Supabase");
+            showErrorMessage("Failed to initialize Supabase");
             return;
           }
         }
@@ -2187,10 +2553,12 @@
             .select("*")
             .limit(1);
           if (error) throw error;
-          alert("Connection successful!");
+          showSuccessMessage("Connection successful!");
         } catch (error) {
           console.error("Connection test error:", error);
-          alert("Connection failed. Please check your Supabase configuration.");
+          showErrorMessage(
+            "Connection failed. Please check your Supabase configuration."
+          );
         }
       });
 
@@ -2200,7 +2568,7 @@
         const key = supabaseKeyInput.value.trim();
 
         if (!url || !key) {
-          alert("Please enter both URL and key");
+          showErrorMessage("Please enter both URL and key");
           return;
         }
 
@@ -2214,6 +2582,87 @@
       // Cancel Supabase config
       cancelSupabaseBtn.addEventListener("click", () => {
         hideModal(supabaseConfigModal);
+      });
+
+      // Google Sign-in button
+      googleSigninBtn.addEventListener("click", async () => {
+        try {
+          if (!supabaseClient) {
+            showErrorMessage("Please configure Supabase first");
+            return;
+          }
+
+          // Instead of using the regular OAuth flow, use the email-based passwordless sign-in
+          const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              skipBrowserRedirect: false, // Let the main window handle it
+              redirectTo: window.location.origin + window.location.pathname,
+              queryParams: {
+                prompt: "select_account", // Always show account selection
+              },
+            },
+          });
+
+          if (error) {
+            console.error("Google auth error:", error);
+            showErrorMessage(
+              "Failed to start Google authentication: " + error.message
+            );
+            return;
+          }
+
+          // The window will be redirected to Google, and then back with the token in the URL
+          // No need for polling as the page will reload with auth data
+        } catch (error) {
+          console.error("Google sign-in error:", error);
+          showErrorMessage("An error occurred during Google sign-in.");
+        }
+      });
+
+      // Add a function to check URL for auth response on page load
+      async function checkForAuthRedirect() {
+        try {
+          // Get the hash fragment from the URL
+          const hash = window.location.hash;
+          if (hash && hash.includes("access_token")) {
+            // Parse the hash parameters
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get("access_token");
+
+            if (accessToken) {
+              // Auth was successful, notify the user
+              hideModal(authModal);
+              showSuccessMessage("Authentication successful!");
+
+              // Try to sync after successful authentication
+              setTimeout(() => {
+                syncToSupabase().then((success) => {
+                  if (success) {
+                    showSuccessMessage("Data has been synced successfully.");
+                  }
+                });
+              }, 1000);
+
+              // Clear the hash from the URL to avoid issues on refresh
+              if (history && history.replaceState) {
+                history.replaceState(null, null, " ");
+              } else {
+                window.location.hash = "";
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error checking auth redirect:", error);
+        }
+      }
+
+      // Check for auth redirect when page loads
+      window.addEventListener("load", checkForAuthRedirect);
+
+      // Cancel auth
+      cancelAuthBtn.addEventListener("click", () => {
+        hideModal(authModal);
       });
 
       // Load saved Supabase config on startup
@@ -2317,7 +2766,7 @@
 
               showModal(createPresetModal);
             } else {
-              alert("No frames in selection");
+              showErrorMessage("No frames in selection");
             }
             break;
         }
@@ -2461,6 +2910,130 @@
           setTimeout(setFrameSizes, 50);
         }
       });
+
+      // Function to generate a short share ID (for display purposes)
+      function generateShareId() {
+        // Generate a 6-digit code with letters and numbers
+        const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding similar looking characters
+        let result = "";
+        for (let i = 0; i < 6; i++) {
+          result += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+          );
+        }
+        return result;
+      }
+
+      // Function to share a collection
+      async function shareCollection(collectionId) {
+        if (!supabaseClient) {
+          showErrorMessage("Please configure Supabase first");
+          return;
+        }
+
+        try {
+          // Find the collection
+          const collection = pluginData.collections.find(
+            (c) => c.id === collectionId
+          );
+          if (!collection) {
+            showErrorMessage("Collection not found");
+            return;
+          }
+
+          // Create a new entry in the shared_collections table
+          const { data: sharedCollection, error } = await supabaseClient
+            .from("shared_collections")
+            .insert({
+              collection_id: collectionId,
+              name: collection.name,
+              presets: collection.presets,
+            })
+            .select("share_id")
+            .single();
+
+          if (error) {
+            console.error("Error sharing collection:", error);
+            showErrorMessage("Error sharing collection: " + error.message);
+            return;
+          }
+
+          // Get the share_id from the response
+          const shareId = sharedCollection.share_id;
+
+          // Show the full share ID (not truncated) to ensure exact matching when importing
+          shareLink.textContent = shareId;
+          showModal(shareCollectionModal);
+        } catch (error) {
+          console.error("Share error:", error);
+          showErrorMessage("Failed to share collection: " + error.message);
+        }
+      }
+
+      // Add non-blocking notification functions
+      function showErrorMessage(message) {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById("error-notification");
+        if (!notification) {
+          notification = document.createElement("div");
+          notification.id = "error-notification";
+          notification.style.position = "fixed";
+          notification.style.bottom = "20px";
+          notification.style.left = "50%";
+          notification.style.transform = "translateX(-50%)";
+          notification.style.backgroundColor = "rgba(255, 59, 48, 0.9)";
+          notification.style.color = "white";
+          notification.style.padding = "8px 16px";
+          notification.style.borderRadius = "4px";
+          notification.style.fontSize = "12px";
+          notification.style.zIndex = "2000";
+          notification.style.maxWidth = "90%";
+          notification.style.textAlign = "center";
+          notification.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+          document.body.appendChild(notification);
+        }
+
+        // Set message and show
+        notification.textContent = message;
+        notification.style.display = "block";
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          notification.style.display = "none";
+        }, 3000);
+      }
+
+      function showSuccessMessage(message) {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById("success-notification");
+        if (!notification) {
+          notification = document.createElement("div");
+          notification.id = "success-notification";
+          notification.style.position = "fixed";
+          notification.style.bottom = "20px";
+          notification.style.left = "50%";
+          notification.style.transform = "translateX(-50%)";
+          notification.style.backgroundColor = "rgba(48, 209, 88, 0.9)";
+          notification.style.color = "white";
+          notification.style.padding = "8px 16px";
+          notification.style.borderRadius = "4px";
+          notification.style.fontSize = "12px";
+          notification.style.zIndex = "2000";
+          notification.style.maxWidth = "90%";
+          notification.style.textAlign = "center";
+          notification.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+          document.body.appendChild(notification);
+        }
+
+        // Set message and show
+        notification.textContent = message;
+        notification.style.display = "block";
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          notification.style.display = "none";
+        }, 3000);
+      }
 
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
