@@ -324,8 +324,30 @@
       }
 
       .collection-header .arrow {
-        transition: transform 0.2s;
-        margin-left: 4px; /* Add space between buttons and arrow */
+        transition: transform 0.3s, color 0.2s;
+        margin-left: 4px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        font-weight: bold;
+      }
+
+      .collection-header .arrow:before {
+        content: "▶";
+        display: block;
+        font-size: 8px; /* Smaller triangle */
+        transform: scale(1); /* Remove scaling to make it smaller */
+      }
+
+      .collection-header .arrow:hover {
+        color: var(--primary-color); /* Light up on hover */
+      }
+
+      .collection-header .arrow.expanded {
+        transform: rotate(90deg);
       }
 
       .collection-dimensions {
@@ -335,42 +357,22 @@
         margin-right: 8px;
       }
 
-      .collection-header .arrow.expanded {
-        transform: rotate(90deg);
-      }
-
-      .collection-actions {
-        display: flex;
-        gap: 6px;
-        opacity: 1;
-      }
-
       .collection-content {
         overflow: hidden;
         max-height: 0;
-        opacity: 0;
-        transition: max-height 0.5s ease-out, opacity 0.4s ease;
+        visibility: hidden; /* Use visibility instead of opacity */
+        transition: max-height 0.3s var(--transition-function),
+          visibility 0s linear 0.3s; /* Delay visibility change */
         margin: 0;
         padding: 0;
       }
 
       .collection-content.expanded {
         max-height: 2000px;
-        opacity: 1;
+        visibility: visible; /* Use visibility instead of opacity */
+        transition: max-height 0.3s var(--transition-function),
+          visibility 0s linear 0s; /* No delay for visibility */
         border-top: none;
-      }
-
-      .arrow {
-        transform: rotate(90deg);
-        transition: transform 0.3s ease;
-        display: inline-block;
-        margin-left: 4px;
-        font-size: 12px;
-        color: var(--text-secondary);
-      }
-
-      .arrow.expanded {
-        transform: rotate(180deg);
       }
 
       .presets-list {
@@ -1209,7 +1211,7 @@
           `.collection-${collectionId} .arrow`
         );
         const content = document.querySelector(
-          `.collection-content-${collectionId}`
+          `.collection-content[data-collection-id="${collectionId}"]`
         );
 
         arrow.classList.toggle("expanded");
@@ -1857,13 +1859,13 @@
           // Create favorites collection header
           favoritesEl.innerHTML = `
           <div class="collection-header" data-id="favorites">
+            <div class="arrow expanded" data-tooltip="Expand/Collapse"></div>
             <div class="collection-name">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px">
                 <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
               </svg>
               Favorites
             </div>
-            <div class="arrow expanded">›</div>
           </div>
           <div class="collection-content expanded" data-collection-id="favorites">
             <div class="presets-list">
@@ -1921,7 +1923,7 @@
           <div class="collection-header" data-id="${
             collection.id
           }" draggable="true">
-            <div class="arrow" data-tooltip="Expand/Collapse">›</div>
+            <div class="arrow" data-tooltip="Expand/Collapse"></div>
             <div class="collection-name">
               ${collection.name}
             </div>
@@ -2068,33 +2070,50 @@
 
             const collectionId = header.getAttribute("data-id");
             if (collectionId) {
-              // First handle the UI expansion
-              // Toggle arrow state
+              // Check if this collection is already expanded
               const arrow = header.querySelector(".arrow");
-              if (arrow) {
-                arrow.classList.toggle("expanded");
-              }
-
-              // Find and toggle the associated content div by data attribute
               const contentDiv = document.querySelector(
                 `.collection-content[data-collection-id="${collectionId}"]`
               );
-              if (contentDiv) {
-                contentDiv.classList.toggle("expanded");
+              const isExpanded = arrow && arrow.classList.contains("expanded");
+
+              // First collapse all collections
+              document
+                .querySelectorAll(".collection-header .arrow")
+                .forEach((otherArrow) => {
+                  otherArrow.classList.remove("expanded");
+                });
+              document
+                .querySelectorAll(".collection-content.expanded")
+                .forEach((otherContent) => {
+                  otherContent.classList.remove("expanded");
+                });
+
+              // Then expand only this collection if it wasn't already expanded
+              if (!isExpanded) {
+                if (arrow) {
+                  arrow.classList.add("expanded");
+                }
+                if (contentDiv) {
+                  contentDiv.classList.add("expanded");
+                }
               }
 
-              // Then notify Figma about active collection change
-              parent.postMessage(
-                {
-                  pluginMessage: {
-                    type: "set-active-collection",
-                    collectionId: collectionId,
-                    // Add a flag to indicate this is just an active state change, not a full refresh
-                    preserveUIState: true,
+              // If this is not the favorites collection, also set it as active
+              if (collectionId !== "favorites") {
+                // Notify Figma about active collection change
+                parent.postMessage(
+                  {
+                    pluginMessage: {
+                      type: "set-active-collection",
+                      collectionId: collectionId,
+                      // Add a flag to indicate this is just an active state change, not a full refresh
+                      preserveUIState: true,
+                    },
                   },
-                },
-                "*"
-              );
+                  "*"
+                );
+              }
             }
           });
         });
@@ -2922,30 +2941,10 @@
         });
       }
 
-      // Function for smooth UI updates
+      // Function for smooth UI updates without blinking
       function smoothUpdate(callback) {
-        const container = document.querySelector(".collections-container");
-
-        // Only apply fade effect if container exists
-        if (!container) {
-          callback();
-          return;
-        }
-
-        // Add a CSS class for the transition
-        container.style.transition = "opacity 0.2s ease";
-        container.style.opacity = "0.6";
-
-        // Short timeout to let the transition happen
-        setTimeout(() => {
-          // Execute the update
-          callback();
-
-          // Restore opacity with a slight delay to ensure DOM is updated
-          setTimeout(() => {
-            container.style.opacity = "1";
-          }, 50);
-        }, 100);
+        // Execute the update immediately without fade transition
+        callback();
       }
 
       // Apply frame sizing after collections are rendered
