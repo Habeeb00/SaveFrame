@@ -664,6 +664,20 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         "framePresetsData"
       );
 
+      // Check if a collection with this name already exists
+      const collectionNameExists = collectionsData.collections.some(
+        (collection) => collection.name.toLowerCase() === msg.name.toLowerCase()
+      );
+
+      if (collectionNameExists) {
+        // Send error message back to UI
+        figma.ui.postMessage({
+          type: "collection-name-exists",
+          name: msg.name,
+        });
+        return;
+      }
+
       // Generate unique ID for the new collection
       const newId = `collection-${Date.now()}`;
 

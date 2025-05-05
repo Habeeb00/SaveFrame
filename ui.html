@@ -1921,11 +1921,7 @@
           <div class="collection-header" data-id="${
             collection.id
           }" draggable="true">
-            <div class="drag-handle">
-              <svg width="10" height="10" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 5H5M7 10H5M7 15H5M15 5H13M15 10H13M15 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+            <div class="arrow" data-tooltip="Expand/Collapse">›</div>
             <div class="collection-name">
               ${collection.name}
             </div>
@@ -1945,8 +1941,12 @@
                     <path d="M1 3H11M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
                   </svg>
                 </button>
+                <div class="drag-handle">
+                  <svg width="10" height="10" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 5H5M7 10H5M7 15H5M15 5H13M15 10H13M15 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
               </div>
-              <div class="arrow" data-tooltip="Expand/Collapse">›</div>
             </div>
           </div>
           <div class="collection-content" data-collection-id="${collection.id}">
@@ -2753,6 +2753,21 @@
             // Update data from Figma
             pluginData = msg.data;
             renderCollections();
+            break;
+
+          case "collection-name-exists":
+            // Handle duplicate collection name error
+            showErrorMessage(
+              `Collection name "${msg.name}" already exists. Please use another name.`
+            );
+
+            // Re-open the modal and focus the input field
+            showModal(newCollectionModal);
+            setTimeout(() => {
+              // Select the text in the input for easy replacement
+              collectionNameInput.select();
+              collectionNameInput.focus();
+            }, 100);
             break;
 
           case "active-collection-changed":
