@@ -3,7 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 // Types
 interface FramePreset {
-  
   id: string;
   name: string;
   width: number;
@@ -337,19 +336,25 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         return;
       }
 
-      // Send frame data to UI for the creation flow
-      figma.ui.postMessage({
-        type: "selection-data",
-        frames: selectedFrames.map((frame) => ({
+      // Create a separate deep copy of each frame's properties to prevent shared references
+      const framesToSend = selectedFrames.map((frame, index) => {
+        // Create a completely isolated object for each frame to avoid any property sharing
+        // Each frame gets its own unique copy of all properties
+        const frameData = {
+          id: `frame-${Date.now()}-${index}`, // Ensure unique IDs
           name: frame.name,
           width: frame.width,
           height: frame.height,
-          // Capture additional frame properties
-          fills: frame.fills,
-          strokes: frame.strokes,
+
+          // Deep clone all properties using JSON stringify/parse to break all object references
+          fills: JSON.parse(JSON.stringify(frame.fills || [])),
+          strokes: JSON.parse(JSON.stringify(frame.strokes || [])),
           strokeWeight: frame.strokeWeight,
-          cornerRadius: frame.cornerRadius,
-          effects: frame.effects,
+          cornerRadius:
+            typeof frame.cornerRadius === "object"
+              ? JSON.parse(JSON.stringify(frame.cornerRadius))
+              : frame.cornerRadius,
+          effects: JSON.parse(JSON.stringify(frame.effects || [])),
           layoutMode: frame.layoutMode,
           primaryAxisSizingMode: frame.primaryAxisSizingMode,
           counterAxisSizingMode: frame.counterAxisSizingMode,
@@ -361,7 +366,22 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
           paddingBottom: frame.paddingBottom,
           itemSpacing: frame.itemSpacing,
           clipsContent: frame.clipsContent,
-        })),
+
+          // Additional metadata to help with debugging
+          originalIndex: index,
+          frameId: frame.id,
+        };
+
+        // Log to verify independent objects
+        console.log(`Processing frame ${index}: ${frame.name} (${frame.id})`);
+
+        return frameData;
+      });
+
+      // Send completely isolated frame data to UI
+      figma.ui.postMessage({
+        type: "selection-data",
+        frames: framesToSend,
         targetCollectionId: msg.targetCollectionId || null,
       });
       break;
@@ -404,71 +424,190 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       }
       break;
 
-    case "use-preset":
-      // Check if we should apply to selection or create a new frame
-      if (msg.applyToSelection) {
-        // Apply preset to selected frames
-        const selection = figma.currentPage.selection;
-        const framesToApplyTo = selection.filter(
-          (node): node is FrameNode => node.type === "FRAME"
-        );
+    case "save-multiple-presets":
+      // Save multiple presets to the target collection
+      const multiPresetsData: PluginData = await figma.clientStorage.getAsync(
+        "framePresetsData"
+      );
 
-        if (framesToApplyTo.length === 0) {
-          figma.notify("Please select at least one frame to apply the preset");
-          return;
+      const collectionIndex = multiPresetsData.collections.findIndex(
+        (c) => c.id === msg.collectionId
+      );
+
+      if (collectionIndex >= 0) {
+        // Check if this is a built-in collection
+        if (multiPresetsData.collections[collectionIndex].isBuiltIn) {
+          figma.notify("Cannot add presets to built-in collections", {
+            error: true,
+          });
+        } else {
+          // Add all presets to the collection
+          if (Array.isArray(msg.presets) && msg.presets.length > 0) {
+            console.log(`Preparing to add ${msg.presets.length} frames`);
+
+            // Create completely independent presets for each frame
+            const presetsToAdd = msg.presets.map(
+              (preset: FramePreset, index: number) => {
+                // Create a new independent object for each preset to avoid any shared references
+                const newPreset = {
+                  // Core properties
+                  id: `preset-${Date.now()}-${index}`, // Ensure unique ID with timestamp and index
+                  name: String(preset.name || ""), // Ensure string type
+                  width: Number(preset.width), // Ensure number type
+                  height: Number(preset.height), // Ensure number type
+                  isFavorite: Boolean(preset.isFavorite || false), // Ensure boolean type
+                  dateCreated: Number(preset.dateCreated || Date.now()), // Ensure number type
+
+                  // Deep clone frame styling properties to break all object references
+                  fills: preset.fills
+                    ? JSON.parse(JSON.stringify(preset.fills))
+                    : [],
+                  strokes: preset.strokes
+                    ? JSON.parse(JSON.stringify(preset.strokes))
+                    : [],
+                  strokeWeight: Number(preset.strokeWeight || 0),
+                  cornerRadius:
+                    typeof preset.cornerRadius === "object"
+                      ? JSON.parse(JSON.stringify(preset.cornerRadius))
+                      : Number(preset.cornerRadius || 0),
+                  effects: preset.effects
+                    ? JSON.parse(JSON.stringify(preset.effects))
+                    : [],
+
+                  // Layout properties
+                  layoutMode: preset.layoutMode || "NONE",
+                  primaryAxisSizingMode:
+                    preset.primaryAxisSizingMode || "FIXED",
+                  counterAxisSizingMode:
+                    preset.counterAxisSizingMode || "FIXED",
+                  primaryAxisAlignItems: preset.primaryAxisAlignItems || "MIN",
+                  counterAxisAlignItems: preset.counterAxisAlignItems || "MIN",
+
+                  // Padding properties
+                  paddingLeft: Number(preset.paddingLeft || 0),
+                  paddingRight: Number(preset.paddingRight || 0),
+                  paddingTop: Number(preset.paddingTop || 0),
+                  paddingBottom: Number(preset.paddingBottom || 0),
+
+                  // Other frame properties
+                  itemSpacing: Number(preset.itemSpacing || 0),
+                  clipsContent: Boolean(preset.clipsContent || true),
+                };
+
+                console.log(
+                  `Processed frame ${index}: ${newPreset.name} (${newPreset.width}×${newPreset.height})`
+                );
+
+                return newPreset;
+              }
+            );
+
+            // Add the presets to the collection
+            multiPresetsData.collections[collectionIndex].presets.push(
+              ...presetsToAdd
+            );
+            await savePluginData(multiPresetsData);
+
+            figma.notify(
+              `Saved ${msg.presets.length} preset${
+                msg.presets.length > 1 ? "s" : ""
+              } to "${multiPresetsData.collections[collectionIndex].name}"`
+            );
+
+            // Send updated data back to the UI
+            figma.ui.postMessage({
+              type: "update",
+              data: multiPresetsData,
+            });
+          }
         }
+      }
+      break;
 
-        // Apply the preset dimensions and properties to all selected frames
-        framesToApplyTo.forEach((frame) => {
+    case "apply-preset":
+      // Apply a preset to selected frames or create a new frame
+      const applyData: PluginData = await figma.clientStorage.getAsync(
+        "framePresetsData"
+      );
+
+      const applyCollection = applyData.collections.find(
+        (c) => c.id === msg.collectionId
+      );
+
+      if (!applyCollection) {
+        figma.notify("Collection not found", { error: true });
+        return;
+      }
+
+      const presetToApply = applyCollection.presets.find(
+        (p) => p.id === msg.presetId
+      );
+
+      if (!presetToApply) {
+        figma.notify("Preset not found", { error: true });
+        return;
+      }
+
+      // Check current selection
+      const applyToSelection = figma.currentPage.selection.filter(
+        (node): node is FrameNode => node.type === "FRAME"
+      );
+
+      if (applyToSelection.length > 0) {
+        // Apply to selected frames
+        applyToSelection.forEach((frame) => {
           // Resize the frame
-          frame.resize(msg.preset.width, msg.preset.height);
+          frame.resize(presetToApply.width, presetToApply.height);
 
           // Apply all additional frame properties if they exist in the preset
-          if (msg.preset.fills) frame.fills = msg.preset.fills as Paint[];
-          if (msg.preset.strokes) frame.strokes = msg.preset.strokes as Paint[];
-          if (msg.preset.strokeWeight !== undefined)
-            frame.strokeWeight = msg.preset.strokeWeight;
-          if (msg.preset.cornerRadius !== undefined) {
-            if (Array.isArray(msg.preset.cornerRadius)) {
+          if (presetToApply.fills) frame.fills = presetToApply.fills as Paint[];
+          if (presetToApply.strokes)
+            frame.strokes = presetToApply.strokes as Paint[];
+          if (presetToApply.strokeWeight !== undefined)
+            frame.strokeWeight = presetToApply.strokeWeight;
+          if (presetToApply.cornerRadius !== undefined) {
+            if (Array.isArray(presetToApply.cornerRadius)) {
               // Use type assertion to avoid TypeScript errors with cornerRadius array
-              (frame as any).cornerRadius = msg.preset.cornerRadius;
+              (frame as any).cornerRadius = presetToApply.cornerRadius;
             } else {
-              frame.cornerRadius = msg.preset.cornerRadius;
+              frame.cornerRadius = presetToApply.cornerRadius;
             }
           }
-          if (msg.preset.effects)
-            frame.effects = msg.preset.effects as Effect[];
-          if (msg.preset.layoutMode) frame.layoutMode = msg.preset.layoutMode;
-          if (msg.preset.primaryAxisSizingMode)
-            frame.primaryAxisSizingMode = msg.preset.primaryAxisSizingMode;
-          if (msg.preset.counterAxisSizingMode)
-            frame.counterAxisSizingMode = msg.preset.counterAxisSizingMode;
-          if (msg.preset.primaryAxisAlignItems)
-            frame.primaryAxisAlignItems = msg.preset.primaryAxisAlignItems;
-          if (msg.preset.counterAxisAlignItems)
-            frame.counterAxisAlignItems = msg.preset.counterAxisAlignItems;
-          if (msg.preset.paddingLeft !== undefined)
-            frame.paddingLeft = msg.preset.paddingLeft;
-          if (msg.preset.paddingRight !== undefined)
-            frame.paddingRight = msg.preset.paddingRight;
-          if (msg.preset.paddingTop !== undefined)
-            frame.paddingTop = msg.preset.paddingTop;
-          if (msg.preset.paddingBottom !== undefined)
-            frame.paddingBottom = msg.preset.paddingBottom;
-          if (msg.preset.itemSpacing !== undefined)
-            frame.itemSpacing = msg.preset.itemSpacing;
-          if (msg.preset.clipsContent !== undefined)
-            frame.clipsContent = msg.preset.clipsContent;
+          if (presetToApply.effects)
+            frame.effects = presetToApply.effects as Effect[];
+          if (presetToApply.layoutMode)
+            frame.layoutMode = presetToApply.layoutMode;
+          if (presetToApply.primaryAxisSizingMode)
+            frame.primaryAxisSizingMode = presetToApply.primaryAxisSizingMode;
+          if (presetToApply.counterAxisSizingMode)
+            frame.counterAxisSizingMode = presetToApply.counterAxisSizingMode;
+          if (presetToApply.primaryAxisAlignItems)
+            frame.primaryAxisAlignItems = presetToApply.primaryAxisAlignItems;
+          if (presetToApply.counterAxisAlignItems)
+            frame.counterAxisAlignItems = presetToApply.counterAxisAlignItems;
+          if (presetToApply.paddingLeft !== undefined)
+            frame.paddingLeft = presetToApply.paddingLeft;
+          if (presetToApply.paddingRight !== undefined)
+            frame.paddingRight = presetToApply.paddingRight;
+          if (presetToApply.paddingTop !== undefined)
+            frame.paddingTop = presetToApply.paddingTop;
+          if (presetToApply.paddingBottom !== undefined)
+            frame.paddingBottom = presetToApply.paddingBottom;
+          if (presetToApply.itemSpacing !== undefined)
+            frame.itemSpacing = presetToApply.itemSpacing;
+          if (presetToApply.clipsContent !== undefined)
+            frame.clipsContent = presetToApply.clipsContent;
         });
 
         figma.notify(
-          `Applied "${msg.preset.name}" to ${
-            framesToApplyTo.length
-          } selected frame${framesToApplyTo.length > 1 ? "s" : ""}`
+          `Applied "${presetToApply.name}" to ${
+            applyToSelection.length
+          } selected frame${applyToSelection.length > 1 ? "s" : ""}`
         );
       } else {
-        // Create a new frame using the selected preset
-        createFrame(msg.preset);
+        // No frames selected, create a new frame
+        createFrame(presetToApply);
+        figma.notify(`Created new frame using "${presetToApply.name}" preset`);
       }
       break;
 
@@ -705,6 +844,36 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       });
 
       figma.notify("Collections reordered successfully");
+      break;
+
+    case "save-imported-collection":
+      // Save a newly imported collection to client storage
+      const importedCollectionData: PluginData =
+        await figma.clientStorage.getAsync("framePresetsData");
+
+      // Check if the collection with this ID already exists
+      const existingCollectionIndex =
+        importedCollectionData.collections.findIndex(
+          (c) => c.id === msg.collection.id
+        );
+
+      if (existingCollectionIndex >= 0) {
+        // Collection ID already exists, update it
+        importedCollectionData.collections[existingCollectionIndex] =
+          msg.collection;
+      } else {
+        // Add the new collection
+        importedCollectionData.collections.push(msg.collection);
+      }
+
+      // Save the updated data to client storage
+      await savePluginData(importedCollectionData);
+
+      figma.notify(
+        `Collection "${msg.collection.name}" imported and saved locally`
+      );
+
+      // No need to send update back to UI since it already has the updated data
       break;
 
     case "close":

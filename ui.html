@@ -1619,12 +1619,19 @@
             return false;
           }
 
+          // Ensure all presets have isFavorite set to false
+          const unfavoritedPresets = sharedCollection.presets.map((preset) => ({
+            ...preset,
+            isFavorite: false, // Explicitly set all presets to not be favorites
+          }));
+
           // Create a new copy of the collection with a new ID to avoid conflicts
           const newCollection = {
             id: "collection-" + Date.now(), // New unique ID
             name: sharedCollection.name + " (Shared)",
-            presets: sharedCollection.presets || [], // Ensure we have an array
+            presets: unfavoritedPresets, // Use the unfavorited presets
             isBuiltIn: false,
+            dateImported: Date.now(), // Add import date for reference
           };
 
           console.log("Created new collection object:", {
@@ -1640,13 +1647,14 @@
           console.log("Updating UI with new collection");
           renderCollections();
 
-          // Notify Figma
-          console.log("Notifying Figma plugin code about new collection");
+          // Notify Figma to save the imported collection to client storage
+          // This ensures the collection persists after plugin restart
           parent.postMessage(
             {
               pluginMessage: {
-                type: "update",
-                data: pluginData,
+                type: "save-imported-collection",
+                collection: newCollection,
+                data: pluginData, // Send full data for backup
               },
             },
             "*"
@@ -1654,7 +1662,9 @@
 
           // Close modal and show success message
           hideModal(importCollectionModal);
-          showSuccessMessage("Collection imported successfully");
+          showSuccessMessage(
+            "Collection imported successfully and saved locally"
+          );
 
           // Reset input for next time
           importIdInput.value = "";
@@ -2122,8 +2132,12 @@
         // Preset card click (use preset)
         document.querySelectorAll(".preset-card").forEach((card) => {
           card.addEventListener("click", (e) => {
-            // Don't use preset if clicking the favorite button
-            if (e.target.closest(".favorite-btn")) return;
+            // Don't use preset if clicking the favorite button or delete button
+            if (
+              e.target.closest(".favorite-btn") ||
+              e.target.closest(".delete-preset-btn")
+            )
+              return;
 
             const presetId = card.dataset.id;
             const collectionId = card.dataset.collection;
@@ -2136,13 +2150,14 @@
             const preset = collection.presets.find((p) => p.id === presetId);
             if (!preset) return;
 
-            // Notify Figma to use this preset on the selected frame
+            // Send the 'apply-preset' message type to handle both applying to selection
+            // and creating new frames when nothing is selected
             parent.postMessage(
               {
                 pluginMessage: {
-                  type: "use-preset",
-                  preset,
-                  applyToSelection: true, // Flag to apply to selected frame instead of creating new
+                  type: "apply-preset",
+                  presetId,
+                  collectionId,
                 },
               },
               "*"
@@ -2360,6 +2375,10 @@
 
         // Store original frame data that came from Figma
         const originalFrameData = window.currentFrameData || [];
+        console.log("Original frame data count:", originalFrameData.length);
+
+        // Track the total number of presets to save
+        const presetsToSave = [];
 
         // Loop through each frame input group
         frameInputGroups.forEach((group, index) => {
@@ -2375,27 +2394,42 @@
           // Get input values
           const name = nameInput.value.trim();
           const width = parseFloat(widthInput.value);
-          const height = parseFloat(heightInput.value); // Fixed: using heightInput.value instead of widthInput
+          const height = parseFloat(heightInput.value);
 
           // Validate
           if (name && !isNaN(width) && !isNaN(height)) {
-            // Create preset with ALL properties from the original frame
-            const originalFrame = originalFrameData[index] || {};
+            // Find the corresponding original frame data for this specific frame
+            // Use the index to ensure we match with the correct frame data
+            const originalFrame = originalFrameData[index];
 
+            if (!originalFrame) {
+              console.error(`Original frame data missing for index ${index}`);
+              return;
+            }
+
+            console.log(
+              `Creating preset for frame ${index}: ${name} (${width}×${height})`
+            );
+
+            // Create a completely separate, independent preset object to avoid property sharing
             const preset = {
-              id: generateId(),
+              id: generateId() + "-" + index, // Ensure unique IDs with index
               name: name,
               width: width,
               height: height,
               isFavorite: false,
               dateCreated: Date.now(),
 
-              // Include all other frame properties from original data
-              fills: originalFrame.fills,
-              strokes: originalFrame.strokes,
+              // Deep clone all frame properties to break object references
+              // This ensures each frame maintains its own unique properties
+              fills: JSON.parse(JSON.stringify(originalFrame.fills || [])),
+              strokes: JSON.parse(JSON.stringify(originalFrame.strokes || [])),
               strokeWeight: originalFrame.strokeWeight,
-              cornerRadius: originalFrame.cornerRadius,
-              effects: originalFrame.effects,
+              cornerRadius:
+                typeof originalFrame.cornerRadius === "object"
+                  ? JSON.parse(JSON.stringify(originalFrame.cornerRadius))
+                  : originalFrame.cornerRadius,
+              effects: JSON.parse(JSON.stringify(originalFrame.effects || [])),
               layoutMode: originalFrame.layoutMode,
               primaryAxisSizingMode: originalFrame.primaryAxisSizingMode,
               counterAxisSizingMode: originalFrame.counterAxisSizingMode,
@@ -2409,19 +2443,34 @@
               clipsContent: originalFrame.clipsContent,
             };
 
-            // Notify Figma
-            parent.postMessage(
-              {
-                pluginMessage: {
-                  type: "save-preset",
-                  preset,
-                  collectionId: pluginData.activeCollectionId,
-                },
-              },
-              "*"
-            );
+            // Add preset to the list to save
+            presetsToSave.push(preset);
           }
         });
+
+        // If we have presets to save, send them all at once to Figma
+        if (presetsToSave.length > 0) {
+          console.log(`Sending ${presetsToSave.length} presets to Figma`);
+
+          // Notify Figma to save all presets at once
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "save-multiple-presets",
+                presets: presetsToSave,
+                collectionId: pluginData.activeCollectionId,
+              },
+            },
+            "*"
+          );
+
+          // Show success message
+          showSuccessMessage(
+            `Saved ${presetsToSave.length} preset${
+              presetsToSave.length > 1 ? "s" : ""
+            }`
+          );
+        }
 
         hideModal(createPresetModal);
       });
