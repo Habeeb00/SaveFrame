@@ -63,6 +63,39 @@
           transform, max-height;
         transition-duration: var(--transition-speed);
         transition-timing-function: var(--transition-function);
+        max-width: 100%; /* Prevent content from overflowing horizontally */
+      }
+
+      /* Force content to stay within bounds */
+      html,
+      body {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden !important; /* Force no horizontal scroll */
+        overscroll-behavior: none;
+      }
+
+      .sidebar {
+        width: 100% !important; /* Ensure sidebar takes exact width */
+        max-width: 100%; /* Prevent sidebar overflow */
+        overflow-x: hidden !important; /* Force no horizontal scroll in sidebar */
+      }
+
+      /* Fix collections container to prevent overflow */
+      .collections-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden !important;
+        padding-right: 0;
+        box-sizing: border-box;
+      }
+
+      /* Ensure preset cards don't overflow */
+      .preset-card {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden !important;
+        box-sizing: border-box;
       }
 
       body {
@@ -74,8 +107,27 @@
         color: var(--figma-text);
         background-color: var(--figma-bg);
         overflow-y: auto;
-        overflow-x: hidden;
+        overflow-x: hidden !important;
         overscroll-behavior: none;
+      }
+
+      /* Remove ALL scrollbars for horizontal scrolling */
+      ::-webkit-scrollbar:horizontal,
+      ::-webkit-scrollbar-horizontal {
+        width: 0 !important;
+        height: 0 !important;
+        display: none !important;
+      }
+
+      /* Ensure no horizontal scrolling in Figma's Chrome-based environment */
+      html,
+      body {
+        overflow-x: hidden;
+        width: 100%;
+      }
+
+      .collections-container {
+        overflow-x: hidden;
       }
 
       /* Tooltip styles */
@@ -266,6 +318,7 @@
         cursor: move;
         opacity: 0.4;
         transition: opacity 0.2s ease;
+        align-self: center; /* Ensure vertical centering within flex parent */
       }
 
       .collection-header:hover .drag-handle {
@@ -319,13 +372,13 @@
       /* Make delete button more visible */
       .delete-collection-btn,
       .share-collection-btn {
-        opacity: 0.7;
+        opacity: 40%;
         transition: opacity 0.2s ease;
       }
 
       .delete-collection-btn:hover,
       .share-collection-btn:hover {
-        opacity: 1;
+        opacity: 100%;
       }
 
       .collection-header .arrow {
