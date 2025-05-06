@@ -384,19 +384,20 @@
       }
 
       .preset-card {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
         padding: 8px 12px;
         cursor: pointer;
         position: relative;
-        display: flex;
         align-items: center;
         transition: background-color 0.2s, transform 0.3s ease,
           opacity 0.3s ease;
-        gap: 12px;
         opacity: 1;
         transform: translateX(0);
         height: auto;
         overflow: hidden;
         border: none;
+        column-gap: 8px; /* Consistent spacing between elements */
       }
 
       /* Create animation classes for entry/exit */
@@ -409,29 +410,47 @@
         border: none;
       }
 
+      /* Make frame preview containers completely invisible in both dark and light mode */
       .preset-preview {
-        flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: auto;
-        height: auto;
+        width: 40px;
+        height: 40px;
+        position: relative;
+        flex-shrink: 0; 
+        background-color: transparent !important;
+        padding: 0;
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
       }
-
-      .preset-preview {
-        flex-shrink: 0;
-        margin-right: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      
+      .preset-preview svg {
+        background: transparent;
+        overflow: visible;
+      }
+      
+      /* Light theme frame colors - exact match to Figma screenshots */
+      .frame-rect-fill {
+        fill: #ececec;
+        stroke: #c7c7c7;
+        stroke-width: 1px;
+      }
+      
+      /* Dark theme frame colors - exact match to Figma screenshots */
+      [data-theme="dark"] .frame-rect-fill {
+        fill: #474747;
+        stroke: #5e5e5e;
+        stroke-width: 1px;
       }
 
       .frame-visual {
         border: 1px solid #ddd;
         background-color: white;
         border-radius: 3px;
-        width: 24px;
-        height: 24px;
+        /* Visual size is dynamic based on aspect ratio but contained in fixed width parent */
         flex-shrink: 0;
         overflow: hidden;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -480,26 +499,28 @@
       }
 
       .preset-name {
-        flex-grow: 1;
-        font-size: 11px;
-        font-weight: 400;
-        color: var(--text-primary);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 90px; /* Fixed max width instead of percentage */
+        margin-left: 4px; /* Reduced left margin */
       }
 
       .preset-info {
-        flex: 1;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         overflow: hidden;
+        min-width: 0; /* Important for text truncation to work properly */
       }
 
       .preset-dimensions-row {
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 8px;
+        gap: 4px;
         margin-left: auto;
         flex-shrink: 0;
       }
@@ -512,8 +533,8 @@
       .preset-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-left: auto;
+        gap: 2px;
+        margin-left: 4px;
       }
 
       .favorite-btn,
@@ -583,11 +604,6 @@
         color: var(--error-color);
       }
 
-      .preset-name {
-        font-size: 10px;
-        font-weight: 500;
-      }
-
       .preset-card:hover {
         background-color: var(--hover-color);
       }
@@ -622,15 +638,6 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-      }
-
-      .preset-name {
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 60%;
-        margin-right: 8px;
       }
 
       .preset-dimensions {
@@ -684,14 +691,15 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 1000;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.2s;
+        transition: opacity 0.2s ease;
+        backdrop-filter: blur(2px);
       }
 
       .modal.active {
@@ -701,59 +709,63 @@
 
       .modal-content {
         background-color: var(--bg-color);
-        border-radius: 4px;
-        padding: 16px;
+        border-radius: 6px;
+        padding: 0;
         width: 90%;
-        max-width: 300px;
-        box-shadow: 0 4px 12px var(--shadow-color);
+        max-width: 320px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        max-height: 80vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(10px);
+        transition: transform 0.2s ease;
+      }
+
+      .modal.active .modal-content {
+        transform: translateY(0);
       }
 
       .modal-header {
-        font-weight: 600;
-        margin-bottom: 16px;
-        font-size: 12px;
-      }
-
-      .collection {
-        border-bottom: 0.1px solid var(--border-color);
-        border-top: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      .collections-container {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .collection:last-child {
-        border-bottom: none;
-      }
-
-      .form-group {
-        margin-bottom: 12px;
-      }
-
-      .form-group label {
-        display: block;
-        margin-bottom: 4px;
+        padding: 16px;
         font-weight: 500;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
       }
 
-      .form-group input {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid var(--border-color);
-        border-radius: 2px;
-        background-color: var(--bg-color);
-        color: var(--text-color);
+      .modal-body {
+        padding: 16px;
+        overflow-y: auto;
+      }
+
+      #preset-frames-container {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .input-hint {
+        font-size: 11px;
+        color: var(--secondary-color);
+        margin-top: 4px;
+      }
+
+      [data-theme="dark"] .input-hint {
+        color: var(--text-secondary);
       }
 
       .form-actions {
         display: flex;
         justify-content: flex-end;
         gap: 8px;
-        margin-top: 16px;
+        margin-top: 0;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--active-color);
+      }
+
+      [data-theme="dark"] .form-actions {
+        background-color: #2a2a2c;
       }
 
       .favorites-section {
@@ -813,6 +825,156 @@
       .hidden {
         display: none !important;
       }
+
+      /* Figma-style notification system */
+      .notification {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        z-index: 2000;
+        max-width: 90%;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      }
+
+      .notification.show {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .notification-icon {
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .notification-error {
+        background-color: #f5f5f5;
+        color: #333333;
+        border-left: 3px solid #f24822;
+      }
+
+      .notification-success {
+        background-color: #f5f5f5;
+        color: #333333;
+        border-left: 3px solid #14ae5c;
+      }
+
+      .notification-warning {
+        background-color: #f5f5f5;
+        color: #333333;
+        border-left: 3px solid #ffbd44;
+      }
+
+      /* Dark mode notifications */
+      [data-theme="dark"] .notification {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      [data-theme="dark"] .notification-error,
+      [data-theme="dark"] .notification-success,
+      [data-theme="dark"] .notification-warning {
+        background-color: #2c2c2e;
+        color: #ffffff;
+      }
+
+      .frame-input-group {
+        background-color: var(--bg-color);
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-color);
+      }
+
+      .frame-input-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--secondary-color);
+      }
+
+      .frame-input-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-size: 11px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        outline: none;
+      }
+
+      .frame-input-group input:focus {
+        border-color: var(--figma-blue);
+        box-shadow: 0 0 0 1px var(--figma-blue);
+      }
+
+      .frame-dimensions-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .dimension-group {
+        position: relative;
+        flex: 1;
+      }
+
+      .dimension-group input {
+        padding-right: 24px;
+      }
+
+      .dimension-group label {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        color: var(--secondary-color);
+        font-size: 10px;
+        pointer-events: none;
+      }
+
+      .frame-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 0;
+      }
+
+      .frame-preview-visual {
+        border: 1px solid var(--border-color);
+        background-color: #fff;
+        border-radius: 2px;
+        position: relative;
+      }
+
+      [data-theme="dark"] .frame-preview-visual {
+        background-color: #333;
+        border-color: #444;
+      }
+
+      #preset-frames-container {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .input-hint {
+        font-size: 11px;
+        color: var(--secondary-color);
+        margin-top: 4px;
+      }
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
@@ -840,7 +1002,7 @@
                 stroke-linecap="round"
               />
             </svg>
-            Save Current Frame
+            Save Frame
           </button>
         </div>
       </div>
@@ -978,13 +1140,19 @@
     <div class="modal" id="new-collection-modal">
       <div class="modal-content">
         <div class="modal-header">Create New Collection</div>
-        <div class="form-group">
-          <label for="collection-name">Collection Name</label>
-          <input
-            type="text"
-            id="collection-name"
-            placeholder="e.g., Web Banners"
-          />
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="collection-name">Collection Name</label>
+            <input
+              type="text"
+              id="collection-name"
+              placeholder="e.g., Web Banners"
+              autofocus
+            />
+            <div class="input-hint">
+              Create a collection to organize your frame presets
+            </div>
+          </div>
         </div>
         <div class="form-actions">
           <button id="cancel-collection-btn">Cancel</button>
@@ -997,8 +1165,10 @@
     <div class="modal" id="create-preset-modal">
       <div class="modal-content">
         <div class="modal-header">Save Frame Preset</div>
-        <div id="preset-frames-container">
-          <!-- Frame inputs will be added here dynamically -->
+        <div class="modal-body">
+          <div id="preset-frames-container">
+            <!-- Frame inputs will be added here dynamically -->
+          </div>
         </div>
         <div class="form-actions">
           <button id="cancel-preset-btn">Cancel</button>
@@ -1011,12 +1181,14 @@
     <div class="modal share-modal" id="share-collection-modal">
       <div class="modal-content">
         <div class="modal-header">Share Collection</div>
-        <p>Share this ID with others to let them import your collection:</p>
-        <div class="share-link" id="share-link">...</div>
-        <button id="copy-share-link" class="copy-btn primary">
-          Copy to Clipboard
-        </button>
+        <div class="modal-body">
+          <p>Share this ID with others to let them import your collection:</p>
+          <div class="share-link" id="share-link">...</div>
+        </div>
         <div class="form-actions">
+          <button id="copy-share-link" class="copy-btn primary">
+            Copy to Clipboard
+          </button>
           <button id="close-share-modal-btn">Close</button>
         </div>
       </div>
@@ -1026,13 +1198,17 @@
     <div class="modal" id="import-collection-modal">
       <div class="modal-content">
         <div class="modal-header">Import Collection</div>
-        <div class="form-group">
-          <label for="import-id">Collection ID</label>
-          <input
-            type="text"
-            id="import-id"
-            placeholder="Paste collection ID here"
-          />
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="import-id">Collection ID</label>
+            <input
+              type="text"
+              id="import-id"
+              placeholder="Paste collection ID here"
+              autofocus
+            />
+            <div class="input-hint">Enter a collection ID shared with you</div>
+          </div>
         </div>
         <div class="form-actions">
           <button id="cancel-import-btn">Cancel</button>
@@ -1045,17 +1221,19 @@
     <div class="modal" id="supabase-config-modal">
       <div class="modal-content">
         <div class="modal-header">Supabase Configuration</div>
-        <div class="form-group">
-          <label for="supabase-url">Supabase URL</label>
-          <input
-            type="text"
-            id="supabase-url"
-            placeholder="https://your-project.supabase.co"
-          />
-        </div>
-        <div class="form-group">
-          <label for="supabase-key">Supabase Anon Key</label>
-          <input type="text" id="supabase-key" placeholder="your-anon-key" />
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="supabase-url">Supabase URL</label>
+            <input
+              type="text"
+              id="supabase-url"
+              placeholder="https://your-project.supabase.co"
+            />
+          </div>
+          <div class="form-group">
+            <label for="supabase-key">Supabase Anon Key</label>
+            <input type="text" id="supabase-key" placeholder="your-anon-key" />
+          </div>
         </div>
         <div class="form-actions">
           <button id="cancel-supabase-btn">Cancel</button>
@@ -1068,21 +1246,23 @@
     <div class="modal" id="auth-modal">
       <div class="modal-content">
         <div class="modal-header">Authentication Required</div>
-        <div id="auth-form-container">
-          <p class="auth-message">Please sign in to sync your collections</p>
-          <div class="oauth-buttons">
-            <button id="google-signin-btn" class="google-button">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png"
-                alt="Google"
-                style="width: 16px; height: 16px; margin-right: 8px"
-              />
-              Sign in with Google
-            </button>
+        <div class="modal-body">
+          <div id="auth-form-container">
+            <p class="auth-message">Please sign in to sync your collections</p>
+            <div class="oauth-buttons">
+              <button id="google-signin-btn" class="google-button">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png"
+                  alt="Google"
+                  style="width: 16px; height: 16px; margin-right: 8px"
+                />
+                Sign in with Google
+              </button>
+            </div>
           </div>
-          <div class="form-actions" style="margin-top: 16px">
-            <button id="cancel-auth-btn">Cancel</button>
-          </div>
+        </div>
+        <div class="form-actions">
+          <button id="cancel-auth-btn">Cancel</button>
         </div>
       </div>
     </div>
@@ -1870,20 +2050,39 @@
           <div class="collection-content expanded" data-collection-id="favorites">
             <div class="presets-list">
               ${favorites
-                .map(
-                  (preset) => `
-                <div class="preset-card" data-id="${
-                  preset.id
-                }" data-collection="${preset.collectionId}">
+                .map((preset) => {
+                  // Calculate frame preview dimensions for visualization using SVG
+                  const maxPreviewSize = 24; // Reduced from 36px to 24px to match regular collections
+                  let previewWidth, previewHeight;
+
+                  // Calculate proper dimensions maintaining aspect ratio
+                  if (preset.width > preset.height) {
+                    previewWidth = maxPreviewSize;
+                    previewHeight =
+                      (preset.height / preset.width) * maxPreviewSize;
+                  } else {
+                    previewHeight = maxPreviewSize;
+                    previewWidth =
+                      (preset.width / preset.height) * maxPreviewSize;
+                  }
+
+                  // Create SVG visualization of the frame
+                  return `
+                <div class="preset-card" data-id="${preset.id}" data-collection="${preset.collectionId}">
                   <div class="preset-preview">
-                    <div class="frame-visual"></div>
+                    <svg width="${maxPreviewSize}" height="${maxPreviewSize}" viewBox="0 0 ${maxPreviewSize} ${maxPreviewSize}" xmlns="http://www.w3.org/2000/svg">
+                      <rect 
+                        x="${(maxPreviewSize - previewWidth) / 2}" 
+                        y="${(maxPreviewSize - previewHeight) / 2}" 
+                        width="${previewWidth}" 
+                        height="${previewHeight}" 
+                        class="frame-rect-fill" />
+                    </svg>
                   </div>
                   <div class="preset-info">
                     <div class="preset-name">${preset.name}</div>
                     <div class="preset-dimensions-row">
-                      <button class="favorite-btn active" data-id="${
-                        preset.id
-                      }" data-collection="${preset.collectionId}">
+                      <button class="favorite-btn active" data-id="${preset.id}" data-collection="${preset.collectionId}">
                         <svg width="16" height="16" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                           <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
                         </svg>
@@ -1894,10 +2093,9 @@
                       )}</div>
                     </div>
                   </div>
-                  <!-- No delete button in favorites -->
                 </div>
-              `
-                )
+              `;
+                })
                 .join("")}
             </div>
           </div>
@@ -1956,13 +2154,36 @@
               ${
                 collection.presets.length > 0
                   ? collection.presets
-                      .map(
-                        (preset) => `
+                      .map((preset) => {
+                        // Calculate frame preview dimensions for visualization using SVG
+                        const maxPreviewSize = 24; // Reduced from 36px to 24px
+                        let previewWidth, previewHeight;
+
+                        // Calculate proper dimensions maintaining aspect ratio
+                        if (preset.width > preset.height) {
+                          previewWidth = maxPreviewSize;
+                          previewHeight =
+                            (preset.height / preset.width) * maxPreviewSize;
+                        } else {
+                          previewHeight = maxPreviewSize;
+                          previewWidth =
+                            (preset.width / preset.height) * maxPreviewSize;
+                        }
+
+                        // Create SVG visualization of the frame
+                        return `
                 <div class="preset-card" data-id="${
                   preset.id
                 }" data-collection="${collection.id}">
                   <div class="preset-preview">
-                    <div class="frame-visual"></div>
+                    <svg width="${maxPreviewSize}" height="${maxPreviewSize}" viewBox="0 0 ${maxPreviewSize} ${maxPreviewSize}" xmlns="http://www.w3.org/2000/svg">
+                      <rect 
+                        x="${(maxPreviewSize - previewWidth) / 2}" 
+                        y="${(maxPreviewSize - previewHeight) / 2}" 
+                        width="${previewWidth}" 
+                        height="${previewHeight}" 
+                        class="frame-rect-fill" />
+                    </svg>
                   </div>
                   <div class="preset-info">
                     <div class="preset-name">${preset.name}</div>
@@ -2002,9 +2223,10 @@
                   </div>
                   `
                       : ""
-                  }                </div>
-              `
-                      )
+                  }                
+                </div>
+              `;
+                      })
                       .join("")
                   : `<div class="empty-state" style="border: none; border-top: none; border-bottom: none;">No presets in this collection. Create one using the "Save Current Frame" button.</div>`
               }
@@ -2020,34 +2242,6 @@
 
         // Setup drag and drop for collection reordering
         setupCollectionDragAndDrop();
-
-        // Render the frame visuals for each preset
-        document.querySelectorAll(".frame-visual").forEach((visual) => {
-          const card = visual.closest(".preset-card");
-          if (!card) return;
-
-          const presetId = card.dataset.id;
-          const collectionId = card.dataset.collection;
-
-          // Find the preset data
-          const collection = pluginData.collections.find(
-            (c) => c.id === collectionId
-          );
-          if (!collection) return;
-
-          const preset = collection.presets.find((p) => p.id === presetId);
-          if (!preset) return;
-
-          // Calculate scale for the visual representation
-          const scaleFactor = calculateScaleFactor(preset.width, preset.height);
-
-          // Set the visual style to match the frame dimensions proportionally
-          const frameWidth = preset.width * scaleFactor;
-          const frameHeight = preset.height * scaleFactor;
-
-          visual.style.width = `${frameWidth}px`;
-          visual.style.height = `${frameHeight}px`;
-        });
       }
 
       // Favorites are now handled directly inside the renderCollections function
@@ -2824,24 +3018,48 @@
             if (msg.frames && msg.frames.length > 0) {
               msg.frames.forEach((frame) => {
                 const frameGroup = document.createElement("div");
-                frameGroup.classList.add("form-group", "frame-input-group");
+                frameGroup.classList.add("frame-input-group");
+
+                // Calculate aspect ratio for the preview
+                const maxPreviewSize = 120;
+                let previewWidth, previewHeight;
+
+                if (frame.width > frame.height) {
+                  previewWidth = maxPreviewSize;
+                  previewHeight = (frame.height / frame.width) * maxPreviewSize;
+                } else {
+                  previewHeight = maxPreviewSize;
+                  previewWidth = (frame.width / frame.height) * maxPreviewSize;
+                }
 
                 frameGroup.innerHTML = `
-                <label>Frame: ${formatDimensions(
-                  frame.width,
-                  frame.height
-                )}</label>
+                <div class="frame-preview">
+                  <div class="frame-preview-visual" style="width: ${previewWidth}px; height: ${previewHeight}px;"></div>
+                </div>
+                <label>Name</label>
                 <input type="text" class="frame-name-input" value="${
                   frame.name
                 }" placeholder="Preset name">
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                  <input type="number" class="frame-width-input" value="${Math.round(
-                    frame.width
-                  )}" placeholder="Width">
-                  <input type="number" class="frame-height-input" value="${Math.round(
-                    frame.height
-                  )}" placeholder="Height">
+                <div class="frame-dimensions-row">
+                  <div class="dimension-group">
+                    <label>Width</label>
+                    <input type="number" class="frame-width-input" value="${Math.round(
+                      frame.width
+                    )}" placeholder="Width">
+                    <span class="unit-label">px</span>
+                  </div>
+                  <div class="dimension-group">
+                    <label>Height</label>
+                    <input type="number" class="frame-height-input" value="${Math.round(
+                      frame.height
+                    )}" placeholder="Height">
+                    <span class="unit-label">px</span>
+                  </div>
                 </div>
+                <div class="input-hint">Original frame: ${formatDimensions(
+                  frame.width,
+                  frame.height
+                )}</div>
               `;
 
                 presetFramesContainer.appendChild(frameGroup);
@@ -2855,7 +3073,7 @@
         }
       };
 
-      // Function to set frame sizes based on aspect ratios
+      // Function to set frame sizes based on aspect ratios - using the improved scaling approach
       function setFrameSizes() {
         // Get all preset cards
         const presetCards = document.querySelectorAll(".preset-card");
@@ -2887,26 +3105,26 @@
             }
           }
 
-          // Adjust frame size based on aspect ratio but slightly smaller to avoid cropping
-          const maxDimension = 20; // Keep the max dimension smaller to ensure no cropping
+          // Use the same approach as in the Save Frame modal
+          const maxPreviewSize = 30; // Slightly larger than before but still appropriate for the list view
+          let previewWidth, previewHeight;
 
           if (width > height) {
             // Landscape
-            const aspectRatio = width / height;
-            const calculatedHeight = maxDimension / aspectRatio;
-            frameVisual.style.width = maxDimension + "px";
-            frameVisual.style.height = calculatedHeight + "px";
-          } else if (height > width) {
-            // Portrait
-            const aspectRatio = height / width;
-            const calculatedWidth = maxDimension / aspectRatio;
-            frameVisual.style.height = maxDimension + "px";
-            frameVisual.style.width = calculatedWidth + "px";
+            previewWidth = maxPreviewSize;
+            previewHeight = (height / width) * maxPreviewSize;
           } else {
-            // Square
-            frameVisual.style.width = maxDimension + "px";
-            frameVisual.style.height = maxDimension + "px";
+            // Portrait or square
+            previewHeight = maxPreviewSize;
+            previewWidth = (width / height) * maxPreviewSize;
           }
+
+          // Set the visual style to match the frame dimensions proportionally
+          frameVisual.style.width = `${previewWidth}px`;
+          frameVisual.style.height = `${previewHeight}px`;
+
+          // Add a subtle border-radius to match the Figma styling
+          frameVisual.style.borderRadius = "2px";
         });
       }
 
@@ -3035,66 +3253,79 @@
 
       // Add non-blocking notification functions
       function showErrorMessage(message) {
-        // Create notification element if it doesn't exist
-        let notification = document.getElementById("error-notification");
-        if (!notification) {
-          notification = document.createElement("div");
-          notification.id = "error-notification";
-          notification.style.position = "fixed";
-          notification.style.bottom = "20px";
-          notification.style.left = "50%";
-          notification.style.transform = "translateX(-50%)";
-          notification.style.backgroundColor = "rgba(255, 59, 48, 0.9)";
-          notification.style.color = "white";
-          notification.style.padding = "8px 16px";
-          notification.style.borderRadius = "4px";
-          notification.style.fontSize = "12px";
-          notification.style.zIndex = "2000";
-          notification.style.maxWidth = "90%";
-          notification.style.textAlign = "center";
-          notification.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
-          document.body.appendChild(notification);
-        }
-
-        // Set message and show
-        notification.textContent = message;
-        notification.style.display = "block";
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          notification.style.display = "none";
-        }, 3000);
+        createAndShowNotification(message, "error");
       }
 
       function showSuccessMessage(message) {
-        // Create notification element if it doesn't exist
-        let notification = document.getElementById("success-notification");
-        if (!notification) {
-          notification = document.createElement("div");
-          notification.id = "success-notification";
-          notification.style.position = "fixed";
-          notification.style.bottom = "20px";
-          notification.style.left = "50%";
-          notification.style.transform = "translateX(-50%)";
-          notification.style.backgroundColor = "rgba(48, 209, 88, 0.9)";
-          notification.style.color = "white";
-          notification.style.padding = "8px 16px";
-          notification.style.borderRadius = "4px";
-          notification.style.fontSize = "12px";
-          notification.style.zIndex = "2000";
-          notification.style.maxWidth = "90%";
-          notification.style.textAlign = "center";
-          notification.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
-          document.body.appendChild(notification);
+        createAndShowNotification(message, "success");
+      }
+
+      function showWarningMessage(message) {
+        createAndShowNotification(message, "warning");
+      }
+
+      function createAndShowNotification(message, type = "success") {
+        // Remove any existing notification of the same type
+        const existingNotification = document.getElementById(
+          `${type}-notification`
+        );
+        if (existingNotification) {
+          document.body.removeChild(existingNotification);
         }
 
-        // Set message and show
-        notification.textContent = message;
-        notification.style.display = "block";
+        // Create new notification element
+        const notification = document.createElement("div");
+        notification.id = `${type}-notification`;
+        notification.className = `notification notification-${type}`;
+
+        // Create icon based on notification type
+        const iconContainer = document.createElement("div");
+        iconContainer.className = "notification-icon";
+
+        let iconSvg = "";
+        switch (type) {
+          case "error":
+            iconSvg = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 4.5V7.5M7 9.5V9.505M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7Z" stroke="#F24822" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+            break;
+          case "success":
+            iconSvg = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4.5 7L6.5 9L9.5 5M13 7C13 10.3137 10.3137 13 7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7Z" stroke="#14AE5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+            break;
+          case "warning":
+            iconSvg = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 4.5V7.5M7 9.5V9.505M7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1C10.3137 1 13 3.68629 13 7C10.3137 13 7 13Z" stroke="#FFBD44" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+            break;
+        }
+
+        iconContainer.innerHTML = iconSvg;
+        notification.appendChild(iconContainer);
+
+        // Add message text
+        const messageText = document.createElement("div");
+        messageText.textContent = message;
+        notification.appendChild(messageText);
+
+        // Add to DOM
+        document.body.appendChild(notification);
+
+        // Trigger animation (wait a frame to ensure proper transition)
+        requestAnimationFrame(() => {
+          notification.classList.add("show");
+        });
 
         // Auto-hide after 3 seconds
         setTimeout(() => {
-          notification.style.display = "none";
+          notification.classList.remove("show");
+          // Remove from DOM after transition
+          setTimeout(() => {
+            if (notification.parentNode) {
+              document.body.removeChild(notification);
+            }
+          }, 300); // Matches CSS transition time
         }, 3000);
       }
 
