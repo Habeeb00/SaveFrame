@@ -8,6 +8,10 @@
       :root {
         /* Light Mode Variables */
         --primary-color: #0d99ff;
+        --first-color: #2c2c2c;
+        --second-color: #7f7f7f;
+        --third-color: #b3b3b3;
+        --heading-color: #161616;
         --secondary-color: #888888;
         --bg-color: #ffffff;
         --text-color: #333333;
@@ -15,6 +19,7 @@
         --active-color: #d4d4d4;
         --hover-color: #f0f0f0;
         --accent-color: #0d99ff;
+        --star-color: rgb(243, 243, 39);
         --shadow-color: rgba(0, 0, 0, 0.1);
         --figma-bg: #f5f5f5;
         --figma-text: #333333;
@@ -37,12 +42,14 @@
 
       [data-theme="dark"] {
         /* Dark Mode Variables */
+        --heading-color: f5f5f5;
         --primary-color: #0a84ff;
-        --secondary-color: #8e8e93;
-        --text-color: #ffffff;
-        --text-primary: #ffffff;
+        --third-color: #8e8e93;
+        --text-color: #8e8e93;
+        --text-primary: #8e8e93;
         --text-secondary: #aeaeb2;
         --bg-color: #1c1c1e;
+        --star-color: #aeaeb2;
         --sidebar-bg: #2c2c2e;
         --border-color: #38383a;
         --hover-color: #3a3a3c;
@@ -98,7 +105,9 @@
         overflow-x: hidden !important;
         box-sizing: border-box;
       }
-
+      .header {
+        color: var(--heading-color);
+      }
       body {
         font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
           Roboto, sans-serif;
@@ -194,7 +203,7 @@
 
       body {
         background-color: var(--bg-color);
-        color: var(--text-primary);
+        color: var(--text-secondary);
         padding: 0;
         display: flex;
         flex-direction: column;
@@ -566,7 +575,7 @@
       }
 
       [data-theme="dark"] .collection-name {
-        color: #ffffff;
+        color:#f5f5f5;
       }
 
       [data-theme="dark"] button {
@@ -621,7 +630,7 @@
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 4px;
+        gap: 6px;
         margin-left: auto;
         flex-shrink: 0;
       }
@@ -635,7 +644,7 @@
         display: flex;
         align-items: center;
         gap: 2px;
-        margin-left: 4px;
+        margin-left: 2px;
       }
 
       .favorite-btn,
@@ -650,11 +659,11 @@
         padding: 5px;
         border-radius: 3px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.1s ease;
         width: 25px;
         height: 25px;
         position: relative;
-        margin-right: 3px;
+        margin-right: 1px;
       }
       .collection-actions button {
         border: none;
@@ -746,7 +755,7 @@
 
       .frame-dimensions {
         font-size: 9px;
-        color: var(--secondary-color);
+        color: var(--text-primary);
         text-align: center;
       }
 
@@ -765,6 +774,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-right: 9px;
         flex: 1;
       }
 
@@ -781,7 +791,7 @@
 
       .favorite-btn.active {
         opacity: 1;
-        color: #f2c94c;
+        color: var(--star-color);
       }
 
       .status-bar {
@@ -1042,7 +1052,7 @@
 
       .frame-dimensions-row {
         display: flex;
-        gap: 8px;
+        gap: 6px;
       }
 
       .dimension-group {
