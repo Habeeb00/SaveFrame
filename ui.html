@@ -12,7 +12,7 @@
         --bg-color: #ffffff;
         --text-color: #333333;
         --border-color: #e0e0e0;
-        --active-color: #f5f5f5;
+        --active-color: #d4d4d4;
         --hover-color: #f0f0f0;
         --accent-color: #0d99ff;
         --shadow-color: rgba(0, 0, 0, 0.1);
@@ -39,13 +39,14 @@
         /* Dark Mode Variables */
         --primary-color: #0a84ff;
         --secondary-color: #8e8e93;
+        --text-color: #ffffff;
         --text-primary: #ffffff;
         --text-secondary: #aeaeb2;
         --bg-color: #1c1c1e;
         --sidebar-bg: #2c2c2e;
         --border-color: #38383a;
         --hover-color: #3a3a3c;
-        --active-color: #686868;
+        --active-color: #848484;
         --danger-color: #ff4530;
         --shadow-color: rgba(0, 0, 0, 0.3);
         --button-color: #2c2c2e;
@@ -346,8 +347,15 @@
       }
 
       .active-collection .collection-header {
+        background-color: var(--hover-color);
         color: var(--text-color);
-        background-color: var(--active-color);
+      }
+
+      .active-collection .collection-header .delete-collection-btn,
+      .active-collection .collection-header .share-collection-btn,
+      .active-collection .collection-header .drag-handle {
+        opacity: 100%;
+        visibility: visible;
       }
 
       /* Add header right container for buttons and arrow */
@@ -632,11 +640,26 @@
 
       .favorite-btn,
       .delete-preset-btn,
-      .preset-actions button,
-      .collection-actions button {
+      .preset-actions button {
         border: none;
         background: none;
         color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 25px;
+        height: 25px;
+        position: relative;
+        margin-right: 3px;
+      }
+      .collection-actions button {
+        border: none;
+        background: none;
+        color: var(--text-color);
         display: flex;
         align-items: center;
         justify-content: center;
