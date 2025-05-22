@@ -378,7 +378,7 @@
       /* Make delete button more visible */
       .delete-collection-btn,
       .share-collection-btn {
-        opacity: 60%;
+        opacity: 30%;
       }
 
       .delete-collection-btn:hover,
@@ -1112,6 +1112,34 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
   <body data-theme="dark">
+    <!-- ( refresh button temp) -->
+    <button
+      id="refresh-ui-btn"
+      style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+        background: #ffecb3;
+        color: #333;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+      "
+    >
+      Refresh UI
+    </button>
+    <script>
+      document
+        .getElementById("refresh-ui-btn")
+        .addEventListener("click", function () {
+          if (typeof renderCollections === "function") {
+            renderCollections();
+          }
+        });
+    </script>
     <div class="sidebar">
       <div class="header">
         <h3>Frame Presets</h3>
@@ -2174,9 +2202,6 @@
           <div class="collection-header" data-id="favorites" style="padding: 6px 12px;">
             <div class="arrow" style="margin-left: 0px;"></div>
             <div class="collection-name" style="display: flex; align-items: center; margin-left: 0px;">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px;">
-                <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
               Favorites
             </div>
           </div>
@@ -2379,97 +2404,91 @@
 
         // Setup drag and drop for collection reordering
         setupCollectionDragAndDrop();
+
+        // Ensure the active collection remains expanded
+        ensureActiveCollectionExpanded();
       }
 
       // Favorites are now handled directly inside the renderCollections function
 
+      // Ensure the active-collection class is updated when the active collection changes
+      function updateActiveCollectionClass() {
+        document.querySelectorAll(".collection").forEach((collectionEl) => {
+          const collectionId = collectionEl.getAttribute("data-id");
+          if (collectionId === pluginData.activeCollectionId) {
+            collectionEl.classList.add("active-collection");
+          } else {
+            collectionEl.classList.remove("active-collection");
+          }
+        });
+      }
+
       // Set up event listeners for collection elements
       function setupCollectionEventListeners() {
-        // Collection header click - makes collection active and toggles expansion
         document.querySelectorAll(".collection-header").forEach((header) => {
           header.addEventListener("click", (e) => {
-            // Stop event propagation to prevent any parent handlers from firing
             e.stopPropagation();
 
-            // Skip if clicking on action buttons
-            if (
-              e.target.closest(".collection-actions") ||
-              e.target.closest("button")
-            ) {
-              return;
-            }
-
             const collectionId = header.getAttribute("data-id");
-            if (collectionId) {
-              // Check if this collection is already expanded
-              const arrow = header.querySelector(".arrow");
-              const contentDiv = document.querySelector(
-                `.collection-content[data-collection-id="${collectionId}"]`
-              );
-              const isExpanded = arrow && arrow.classList.contains("expanded");
+            const arrow = header.querySelector(".arrow");
+            const contentDiv = document.querySelector(
+              `.collection-content[data-collection-id="${collectionId}"]`
+            );
+            const isExpanded = arrow && arrow.classList.contains("expanded");
 
-              // Allow 'favorites' to collapse and expand independently
-              if (collectionId === "favorites") {
-                if (isExpanded) {
-                  arrow.classList.remove("expanded");
-                  contentDiv.classList.remove("expanded");
-                } else {
-                  arrow.classList.add("expanded");
-                  contentDiv.classList.add("expanded");
-                }
-                return; // Exit early to avoid affecting other collections
-              }
-
-              // Ensure 'favorites' remains unaffected when other collections are expanded
-              document
-                .querySelectorAll(".collection-header .arrow")
-                .forEach((otherArrow) => {
-                  const parentHeader = otherArrow.closest(".collection-header");
-                  const parentCollectionId =
-                    parentHeader?.getAttribute("data-id");
-                  if (parentCollectionId !== "favorites") {
-                    otherArrow.classList.remove("expanded");
-                  }
-                });
-              document
-                .querySelectorAll(".collection-content.expanded")
-                .forEach((otherContent) => {
-                  const parentContentId =
-                    otherContent.getAttribute("data-collection-id");
-                  if (parentContentId !== "favorites") {
-                    otherContent.classList.remove("expanded");
-                  }
-                });
-
-              // Then expand only this collection if it wasn't already expanded
-              if (!isExpanded) {
-                if (arrow) {
-                  arrow.classList.add("expanded");
-                }
-                if (contentDiv) {
-                  contentDiv.classList.add("expanded");
-                }
+            // Handle "Favorites" collection separately
+            if (collectionId === "favorites") {
+              if (isExpanded) {
+                arrow.classList.remove("expanded");
+                contentDiv.classList.remove("expanded");
               } else {
-                if (arrow) arrow.classList.remove("expanded");
-                if (contentDiv) contentDiv.classList.remove("expanded");
+                arrow.classList.add("expanded");
+                contentDiv.classList.add("expanded");
               }
-
-              // If this is not the favorites collection, also set it as active
-              if (collectionId !== "favorites") {
-                // Notify Figma about active collection change
-                parent.postMessage(
-                  {
-                    pluginMessage: {
-                      type: "set-active-collection",
-                      collectionId: collectionId,
-                      // Add a flag to indicate this is just an active state change, not a full refresh
-                      preserveUIState: true,
-                    },
-                  },
-                  "*"
-                );
-              }
+              pluginData.activeCollectionId = collectionId; // Ensure "Favorites" can also be active
+              updateActiveCollectionClass();
+              return; // Exit early to avoid affecting other collections
             }
+
+            // Collapse all other collections (except "Favorites")
+            document
+              .querySelectorAll(".collection-header .arrow")
+              .forEach((otherArrow) => {
+                const parentHeader = otherArrow.closest(".collection-header");
+                const parentCollectionId =
+                  parentHeader?.getAttribute("data-id");
+                if (
+                  parentCollectionId !== "favorites" &&
+                  parentCollectionId !== collectionId
+                ) {
+                  otherArrow.classList.remove("expanded");
+                }
+              });
+            document
+              .querySelectorAll(".collection-content.expanded")
+              .forEach((otherContent) => {
+                const parentContentId =
+                  otherContent.getAttribute("data-collection-id");
+                if (
+                  parentContentId !== "favorites" &&
+                  parentContentId !== collectionId
+                ) {
+                  otherContent.classList.remove("expanded");
+                }
+              });
+
+            // Toggle the clicked collection's expansion state
+            if (isExpanded) {
+              arrow.classList.remove("expanded");
+              contentDiv.classList.remove("expanded");
+            } else {
+              arrow.classList.add("expanded");
+              contentDiv.classList.add("expanded");
+            }
+
+            // Set the clicked collection as active
+            pluginData.activeCollectionId = collectionId;
+            updateActiveCollectionClass();
           });
         });
 
@@ -3488,6 +3507,26 @@
             }
           }, 300); // Matches CSS transition time
         }, 3000);
+      }
+
+      // Ensure the active collection remains expanded until the plugin is closed
+      function ensureActiveCollectionExpanded() {
+        if (pluginData.activeCollectionId) {
+          const activeArrow = document.querySelector(
+            `.collection-${pluginData.activeCollectionId} .arrow`
+          );
+          const activeContent = document.querySelector(
+            `.collection-content[data-collection-id="${pluginData.activeCollectionId}"]`
+          );
+
+          if (activeArrow && activeContent) {
+            // Only expand if not already expanded
+            if (!activeArrow.classList.contains("expanded")) {
+              activeArrow.classList.add("expanded");
+              activeContent.classList.add("expanded");
+            }
+          }
+        }
       }
 
       // Signal to Figma that the UI is ready
