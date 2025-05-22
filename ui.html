@@ -439,6 +439,11 @@
         padding: 0;
       }
 
+      /* Prevent favorites from visually re-expanding due to layout reflow */
+      .collection-content[data-collection-id="favorites"] {
+        transition: none !important;
+      }
+
       .collection-content.expanded {
         max-height: 2000px;
         visibility: visible; /* Use visibility instead of opacity */
@@ -446,8 +451,7 @@
           visibility 0s linear 0s; /* No delay for visibility */
         border-top: none;
       }
-
-      .presets-list {
+      c .presets-list {
         display: flex;
         flex-direction: column;
         padding: 0;
@@ -2168,7 +2172,7 @@
           // Create favorites collection header
           favoritesEl.innerHTML = `
           <div class="collection-header" data-id="favorites" style="padding: 6px 12px;">
-            <div class="arrow expanded" style="margin-left: 0px;"></div>
+            <div class="arrow" style="margin-left: 0px;"></div>
             <div class="collection-name" style="display: flex; align-items: center; margin-left: 0px;">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px;">
                 <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
@@ -2176,7 +2180,7 @@
               Favorites
             </div>
           </div>
-          <div class="collection-content expanded" data-collection-id="favorites">
+          <div class="collection-content" data-collection-id="favorites">
             <div class="presets-list">
               ${favorites
                 .map((preset) => {
@@ -2445,6 +2449,9 @@
                 if (contentDiv) {
                   contentDiv.classList.add("expanded");
                 }
+              } else {
+                if (arrow) arrow.classList.remove("expanded");
+                if (contentDiv) contentDiv.classList.remove("expanded");
               }
 
               // If this is not the favorites collection, also set it as active
