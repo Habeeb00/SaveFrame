@@ -45,7 +45,7 @@
         --sidebar-bg: #2c2c2e;
         --border-color: #38383a;
         --hover-color: #3a3a3c;
-        --active-color: #2c4a67;
+        --active-color: #686868;
         --danger-color: #ff4530;
         --shadow-color: rgba(0, 0, 0, 0.3);
         --button-color: #2c2c2e;
@@ -321,6 +321,12 @@
         align-self: center; /* Ensure vertical centering within flex parent */
       }
 
+      .drag-handle:hover {
+        background-color: var(--hover-color);
+        border-radius: 50%;
+        transition: background-color 0.2s ease;
+      }
+
       .collection-header:hover .drag-handle {
         opacity: 0.8;
       }
@@ -372,13 +378,21 @@
       /* Make delete button more visible */
       .delete-collection-btn,
       .share-collection-btn {
-        opacity: 40%;
-        transition: opacity 0.2s ease;
+        opacity: 60%;
       }
 
       .delete-collection-btn:hover,
       .share-collection-btn:hover {
         opacity: 100%;
+      }
+
+      .collection-header:hover .delete-collection-btn,
+      .collection-header:hover .share-collection-btn,
+      .collection-header:hover .drag-handle,
+      .active-collection .collection-header .delete-collection-btn,
+      .active-collection .collection-header .share-collection-btn,
+      .active-collection .collection-header .drag-handle {
+        opacity: 1 !important;
       }
 
       .collection-header .arrow {
@@ -531,12 +545,12 @@
       }
 
       [data-theme="dark"] .collection-header {
-        background-color: #2c2c2e;
-        border-bottom: 1px solid #38383a;
+        background-color: #252526;
+        border-bottom: 1px solid #000000;
       }
 
       [data-theme="dark"] .active-collection .collection-header {
-        background-color: #2c4a67;
+        background-color: #4f4e4e;
       }
 
       [data-theme="dark"] .collection-name {
@@ -548,12 +562,29 @@
       }
 
       [data-theme="dark"] button:hover {
-        background-color: #3a3a3c;
+        background-color: transparent;
+        box-shadow: none;
       }
 
       [data-theme="dark"] .favorite-btn.active svg {
         fill: #ffcc33;
         stroke: #ffcc33;
+      }
+
+      [data-theme="dark"] .new-collection-btn,
+      [data-theme="dark"] .import-btn {
+        background-color: #3a3a3c;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 6px 12px;
+        color: #ffffff;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+
+      [data-theme="dark"] .new-collection-btn:hover,
+      [data-theme="dark"] .import-btn:hover {
+        background-color: #4a4a4c;
+        border-color: #666;
       }
 
       .preset-name {
@@ -1076,7 +1107,7 @@
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
-  <body>
+  <body data-theme="dark">
     <div class="sidebar">
       <div class="header">
         <h3>Frame Presets</h3>
@@ -2373,16 +2404,37 @@
               );
               const isExpanded = arrow && arrow.classList.contains("expanded");
 
-              // First collapse all collections
+              // Allow 'favorites' to collapse and expand independently
+              if (collectionId === "favorites") {
+                if (isExpanded) {
+                  arrow.classList.remove("expanded");
+                  contentDiv.classList.remove("expanded");
+                } else {
+                  arrow.classList.add("expanded");
+                  contentDiv.classList.add("expanded");
+                }
+                return; // Exit early to avoid affecting other collections
+              }
+
+              // Ensure 'favorites' remains unaffected when other collections are expanded
               document
                 .querySelectorAll(".collection-header .arrow")
                 .forEach((otherArrow) => {
-                  otherArrow.classList.remove("expanded");
+                  const parentHeader = otherArrow.closest(".collection-header");
+                  const parentCollectionId =
+                    parentHeader?.getAttribute("data-id");
+                  if (parentCollectionId !== "favorites") {
+                    otherArrow.classList.remove("expanded");
+                  }
                 });
               document
                 .querySelectorAll(".collection-content.expanded")
                 .forEach((otherContent) => {
-                  otherContent.classList.remove("expanded");
+                  const parentContentId =
+                    otherContent.getAttribute("data-collection-id");
+                  if (parentContentId !== "favorites") {
+                    otherContent.classList.remove("expanded");
+                  }
                 });
 
               // Then expand only this collection if it wasn't already expanded
