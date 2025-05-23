@@ -442,54 +442,92 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         return;
       }
 
-      // Create a separate deep copy of each frame's properties to prevent shared references
-      const framesToSend = selectedFrames.map((frame, index) => {
-        // Create a completely isolated object for each frame to avoid any property sharing
-        // Each frame gets its own unique copy of all properties
-        const frameData = {
-          id: `frame-${Date.now()}-${index}`, // Ensure unique IDs
-          name: frame.name,
-          width: frame.width,
-          height: frame.height,
-
-          // Deep clone all properties using JSON stringify/parse to break all object references
+      // Determine target collection (use active collection or first custom collection)
+      const targetCollectionId = msg.targetCollectionId || 
+                                (checkData.activeCollectionId && 
+                                 !checkData.collections.find(c => c.id === checkData.activeCollectionId)?.isBuiltIn ? 
+                                 checkData.activeCollectionId : customCollections[0].id);
+      
+      // For now, handle only the first frame for simplicity if multiple are selected
+      const frame = selectedFrames[0];
+      
+      // Instead of asking for a name directly in Figma, we'll send a message to the UI
+      figma.ui.postMessage({
+        type: "inline-name-edit",
+        frameName: frame.name,
+        frameWidth: frame.width,
+        frameHeight: frame.height,
+        targetCollectionId: targetCollectionId,
+        frameProps: {
           fills: JSON.parse(JSON.stringify(frame.fills || [])),
           strokes: JSON.parse(JSON.stringify(frame.strokes || [])),
-          strokeWeight: frame.strokeWeight,
-          cornerRadius:
-            typeof frame.cornerRadius === "object"
-              ? JSON.parse(JSON.stringify(frame.cornerRadius))
-              : frame.cornerRadius,
+          strokeWeight: Number(frame.strokeWeight),
+          cornerRadius: typeof frame.cornerRadius === "object"
+            ? JSON.parse(JSON.stringify(frame.cornerRadius))
+            : frame.cornerRadius,
           effects: JSON.parse(JSON.stringify(frame.effects || [])),
           layoutMode: frame.layoutMode,
           primaryAxisSizingMode: frame.primaryAxisSizingMode,
           counterAxisSizingMode: frame.counterAxisSizingMode,
           primaryAxisAlignItems: frame.primaryAxisAlignItems,
-          counterAxisAlignItems: frame.counterAxisAlignItems,
+          counterAxisAlignItems: frame.counterAxisAlignItems === "MIN" || 
+                                frame.counterAxisAlignItems === "CENTER" || 
+                                frame.counterAxisAlignItems === "MAX" ? 
+                                frame.counterAxisAlignItems : "CENTER",
           paddingLeft: frame.paddingLeft,
           paddingRight: frame.paddingRight,
           paddingTop: frame.paddingTop,
           paddingBottom: frame.paddingBottom,
           itemSpacing: frame.itemSpacing,
           clipsContent: frame.clipsContent,
-
-          // Additional metadata to help with debugging
-          originalIndex: index,
-          frameId: frame.id,
-        };
-
-        // Log to verify independent objects
-        console.log(`Processing frame ${index}: ${frame.name} (${frame.id})`);
-
-        return frameData;
+        }
       });
-
-      // Send completely isolated frame data to UI
-      figma.ui.postMessage({
-        type: "selection-data",
-        frames: framesToSend,
-        targetCollectionId: msg.targetCollectionId || null,
-      });
+      break;
+      
+    case "save-frame-with-name":
+      // This is a new message type for saving a frame with an edited name
+      if (!msg.frameName || !msg.targetCollectionId) {
+        figma.notify("Error: Missing required data for saving frame");
+        return;
+      }
+      
+      // Get plugin data again to ensure we have the latest
+      const frameSaveData: PluginData = await figma.clientStorage.getAsync("framePresetsData");
+      
+      // Create the preset with the edited name
+      const newPreset: FramePreset = {
+        id: `preset-${Date.now()}`,
+        name: msg.frameName,
+        width: msg.frameWidth,
+        height: msg.frameHeight,
+        isFavorite: false,
+        dateCreated: Date.now(),
+        ...msg.frameProps // Spread the frame properties
+      };
+      
+      // Find the target collection
+      const frameSaveCollectionIndex = frameSaveData.collections.findIndex(
+        c => c.id === msg.targetCollectionId
+      );
+      
+      if (frameSaveCollectionIndex >= 0) {
+        // Add preset to the collection
+        frameSaveData.collections[frameSaveCollectionIndex].presets.push(newPreset);
+        
+        // Save updated data
+        await savePluginData(frameSaveData);
+        
+        // Send updated data to UI
+        figma.ui.postMessage({
+          type: "update",
+          data: frameSaveData,
+        });
+        
+        // Show success notification
+        figma.notify(
+          `Saved "${msg.frameName}" to "${frameSaveData.collections[frameSaveCollectionIndex].name}"`
+        );
+      }
       break;
 
     case "selection-data":
@@ -1062,6 +1100,13 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         .catch((err) =>
           console.error("Error retrieving Supabase config:", err)
         );
+      break;
+      
+    case "open-url":
+      // Open a URL in the default browser
+      if (msg.url) {
+        figma.openExternal(msg.url);
+      }
       break;
   }
 };

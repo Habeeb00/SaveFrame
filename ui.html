@@ -834,9 +834,24 @@
         margin-top: auto;
       }
 
-      .sync-status {
-        font-size: 10px;
-        color: var(--secondary-color);
+      .help-button {
+        cursor: pointer;
+        color: var(--figma-secondary);
+        padding: 4px;
+        transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .help-button:hover {
+        color: var(--primary-color);
+      }
+      
+      .help-text {
+        font-size: 11px;
+        font-weight: 500;
       }
 
       .theme-toggle {
@@ -1312,7 +1327,162 @@
         font-size: 10px;
       }
 
+      /* Inline Name Edit Modal */
+      .frame-dimensions-info {
+        margin-top: 12px;
+        color: var(--secondary-color);
+        font-size: 11px;
+        text-align: center;
+        padding: 8px;
+        background-color: var(--hover-color);
+        border-radius: 4px;
+      }
+
       /* Loading spinner */
+      .loading-spinner {
+        border: 2px solid var(--border-color);
+        border-top: 2px solid var(--accent-color);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+
+      /* Help Modal Styles */
+      .help-modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+
+      .help-section {
+        margin-bottom: 20px;
+      }
+
+      .help-section h3 {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-color);
+      }
+
+      .help-list {
+        padding-left: 16px;
+        margin: 0;
+      }
+
+      .help-list li {
+        margin-bottom: 8px;
+        line-height: 1.4;
+        font-size: 11px;
+        color: var(--text-color);
+      }
+
+      .help-list li strong {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      /* Support the Creator section */
+      .support-creator {
+        padding: 4px 16px;
+        border-top: 1px solid var(--border-color);
+        text-align: center;
+        background-color: transparent;
+        margin-bottom: 4px;
+      }
+
+      .support-creator h4 {
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        color: var(--text-color);
+      }
+
+      .bmc-button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      .bmc-custom-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 12px;
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin: 0 auto;
+      }
+
+      .bmc-custom-button:hover {
+        background-color: #5F7FFF;
+        color: white;
+        border-color: #5F7FFF;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      }
+
+      .bmc-emoji {
+        margin-right: 6px;
+        font-size: 12px;
+      }
+
+      /* Premium bundles link */
+      .premium-bundle-link {
+        padding: 8px 16px;
+        background-color: transparent;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 5;
+        box-shadow: none;
+      }
+
+      .premium-bundle-link:hover {
+        background-color: rgba(95, 127, 255, 0.1);
+        transform: none;
+        box-shadow: none;
+      }
+
+      .premium-bundle-link a {
+        color: var(--text-color);
+        text-decoration: none;
+        font-size: 10px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 0;
+      }
+      
+      .premium-bundle-link:hover a {
+        color: var(--primary-color);
+      }
+
+      .premium-bundle-link .premium-icon {
+        margin-right: 6px;
+        color: var(--text-color);
+        font-size: 10px;
+        text-shadow: none;
+      }
+      
+      .premium-bundle-link:hover .premium-icon {
+        color: gold;
+      }
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
@@ -1324,7 +1494,7 @@
           <button
             id="create-preset-btn"
             class="primary"
-            data-tooltip="Create preset from selected frame"
+            data-tooltip="Save selected frame to active collection"
           >
             <svg
               width="12"
@@ -1425,10 +1595,29 @@
         <div class="loading">
           <div class="loading-spinner"></div>
         </div>
+
+        <div class="premium-bundle-link">
+          <a href="#" id="premium-bundle-btn">
+            <span class="premium-icon">✨</span>
+            <strong>Premium Templates:</strong> Get Shopify & Print bundles!
+          </a>
+        </div>
       </div>
 
       <div class="status-bar">
-        <div class="sync-status">Last synced: Never</div>
+        <div class="help-button" id="help-button" data-tooltip="Help & Tips">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M7 10V10.01M7 4C5.89543 4 5 4.89543 5 6C5 7.10457 5.89543 8 7 8C8.10457 8 9 7.10457 9 6C9 4.89543 8.10457 4 7 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="help-text">Help</span>
+        </div>
+        
+        <button id="bmc-button" class="bmc-custom-button">
+          <span class="bmc-emoji">☕</span>
+          Support creator
+        </button>
+        
         <div class="theme-toggle" id="theme-toggle">
           <svg
             width="14"
@@ -1594,6 +1783,85 @@
         </div>
         <div class="form-actions">
           <button id="close-settings-btn" class="primary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Name Edit Modal -->
+    <div class="modal" id="inline-name-edit-modal">
+      <div class="modal-content">
+        <div class="modal-header">Save Frame</div>
+        <div class="modal-body">
+          <div class="modal-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21Z" fill="var(--primary-color)" fill-opacity="0.5"/>
+              <path d="M14 15H10V19H14V15Z" fill="var(--primary-color)"/>
+              <path d="M8 11H16V13H8V11Z" fill="var(--primary-color)"/>
+              <path d="M8 7H16V9H8V7Z" fill="var(--primary-color)"/>
+            </svg>
+          </div>
+          <div class="form-group">
+            <label for="inline-frame-name">Frame Name</label>
+            <input 
+              type="text" 
+              id="inline-frame-name" 
+              placeholder="Enter frame name" 
+              autofocus
+            />
+            <div class="frame-dimensions-info" id="frame-dimensions-info">
+              <!-- Will be filled dynamically -->
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="cancel-inline-edit-btn">Cancel</button>
+          <button id="save-inline-edit-btn" class="primary">Save Frame</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="help-modal">
+      <div class="modal-content">
+        <div class="modal-header">Help & Tips</div>
+        <div class="modal-body help-modal-body">
+          <div class="help-section">
+            <h3>Getting Started</h3>
+            <ul class="help-list">
+              <li><strong>Create a collection</strong> - Click "New Collection" to organize your frames</li>
+              <li><strong>Save frames</strong> - Select a frame and click "Save Frame" to add it to your active collection</li>
+              <li><strong>Apply frames</strong> - Click on any saved frame to apply its dimensions and properties</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h3>Working with Collections</h3>
+            <ul class="help-list">
+              <li><strong>Active collection</strong> - The highlighted collection is where new frames will be saved</li>
+              <li><strong>Drag & drop</strong> - Reorder collections by dragging their headers</li>
+              <li><strong>Built-in collections</strong> - Default collections can't be modified but can be used as templates</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h3>Keyboard Shortcuts</h3>
+            <ul class="help-list">
+              <li><strong>Enter</strong> - Save when editing a frame name</li>
+              <li><strong>Escape</strong> - Cancel current operation</li>
+            </ul>
+          </div>
+          
+          <div class="help-section">
+            <h3>Tips</h3>
+            <ul class="help-list">
+              <li>Star your favorite frames to access them quickly in the Favorites section</li>
+              <li>Use the Settings button to access plugin configuration</li>
+              <li>Toggle between light and dark mode using the theme button</li>
+            </ul>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="close-help-btn" class="primary">Close</button>
         </div>
       </div>
     </div>
@@ -2538,6 +2806,17 @@
           collectionsContainer.appendChild(collectionEl);
         });
 
+        // Add premium bundle link after all collections
+        const premiumBundleEl = document.createElement("div");
+        premiumBundleEl.className = "premium-bundle-link";
+        premiumBundleEl.innerHTML = `
+          <a href="#" id="premium-bundle-btn">
+            <span class="premium-icon">✨</span>
+            Premium Templates & Bundles
+          </a>
+        `;
+        collectionsContainer.appendChild(premiumBundleEl);
+
         // Set up event listeners for the newly created elements
         setupCollectionEventListeners();
 
@@ -2905,7 +3184,8 @@
           console.log("Using first custom collection:", targetCollectionId);
         }
 
-        // Request current selection from Figma
+        // Send the create-preset message directly to Figma
+        // This will now automatically save frames without opening the modal
         parent.postMessage(
           {
             pluginMessage: {
@@ -3225,6 +3505,74 @@
             renderCollections();
             break;
 
+          case "inline-name-edit":
+            // Handle the inline name edit request
+            const inlineNameEditModal = document.getElementById("inline-name-edit-modal");
+            const inlineFrameNameInput = document.getElementById("inline-frame-name");
+            const frameDimensionsInfo = document.getElementById("frame-dimensions-info");
+            const saveInlineEditBtn = document.getElementById("save-inline-edit-btn");
+            const cancelInlineEditBtn = document.getElementById("cancel-inline-edit-btn");
+            
+            // Store frame data for later use
+            window.currentFrameData = {
+              frameWidth: msg.frameWidth,
+              frameHeight: msg.frameHeight,
+              targetCollectionId: msg.targetCollectionId,
+              frameProps: msg.frameProps
+            };
+            
+            // Set the initial name value
+            inlineFrameNameInput.value = msg.frameName;
+            
+            // Set the dimensions info
+            frameDimensionsInfo.textContent = `Frame Dimensions: ${Math.round(msg.frameWidth)} × ${Math.round(msg.frameHeight)}px`;
+            
+            // Show the modal
+            showModal(inlineNameEditModal);
+            
+            // Select the text in the input for easy editing
+            setTimeout(() => {
+              inlineFrameNameInput.select();
+            }, 100);
+            
+            // Set up event listeners
+            saveInlineEditBtn.onclick = () => {
+              const frameName = inlineFrameNameInput.value.trim();
+              if (!frameName) {
+                showErrorMessage("Please enter a frame name");
+                return;
+              }
+              
+              // Send message to save the frame with the edited name
+              parent.postMessage({
+                pluginMessage: {
+                  type: "save-frame-with-name",
+                  frameName: frameName,
+                  frameWidth: window.currentFrameData.frameWidth,
+                  frameHeight: window.currentFrameData.frameHeight,
+                  targetCollectionId: window.currentFrameData.targetCollectionId,
+                  frameProps: window.currentFrameData.frameProps
+                }
+              }, "*");
+              
+              // Hide the modal
+              hideModal(inlineNameEditModal);
+            };
+            
+            cancelInlineEditBtn.onclick = () => {
+              hideModal(inlineNameEditModal);
+            };
+            
+            // Add keyboard event handlers
+            inlineFrameNameInput.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                saveInlineEditBtn.click();
+              } else if (e.key === 'Escape') {
+                cancelInlineEditBtn.click();
+              }
+            });
+            break;
+
           case "collection-name-exists":
             // Handle duplicate collection name error
             showErrorMessage(
@@ -3266,65 +3614,21 @@
             break;
 
           case "selection-data":
-            // Received frame data for preset creation
-            presetFramesContainer.innerHTML = "";
+            // This case is no longer used since we're saving frames directly
+            // Kept for backward compatibility
+            console.log("Received selection-data message - this flow is deprecated");
+            break;
 
-            // Store the original frame data for later use when saving the preset
-            window.currentFrameData = msg.frames || [];
+          case "no-custom-collections":
+            // Handle the case when there are no custom collections
+            if (confirm(
+              "You need to create a collection first to save frames. Would you like to create one now?"
+            )) {
+              collectionNameInput.value = "";
+              showModal(newCollectionModal);
 
-            if (msg.frames && msg.frames.length > 0) {
-              msg.frames.forEach((frame) => {
-                const frameGroup = document.createElement("div");
-                frameGroup.classList.add("frame-input-group");
-
-                // Calculate aspect ratio for the preview
-                const maxPreviewSize = 120;
-                let previewWidth, previewHeight;
-
-                if (frame.width > frame.height) {
-                  previewWidth = maxPreviewSize;
-                  previewHeight = (frame.height / frame.width) * maxPreviewSize;
-                } else {
-                  previewHeight = maxPreviewSize;
-                  previewWidth = (frame.width / frame.height) * maxPreviewSize;
-                }
-
-                frameGroup.innerHTML = `
-                <div class="frame-preview">
-                  <div class="frame-preview-visual" style="width: ${previewWidth}px; height: ${previewHeight}px;"></div>
-                </div>
-                <label>Name</label>
-                <input type="text" class="frame-name-input" value="${
-                  frame.name
-                }" placeholder="Preset name">
-                <div class="frame-dimensions-row">
-                  <div class="dimension-group">
-                    <label>Width</label>
-                    <input type="number" class="frame-width-input" value="${Math.round(
-                      frame.width
-                    )}" placeholder="Width">
-                    <span class="unit-label">px</span>
-                  </div>
-                  <div class="dimension-group">
-                    <label>Height</label>
-                    <input type="number" class="frame-height-input" value="${Math.round(
-                      frame.height
-                    )}" placeholder="Height">
-                    <span class="unit-label">px</span>
-                  </div>
-                </div>
-                <div class="input-hint">Original frame: ${formatDimensions(
-                  frame.width,
-                  frame.height
-                )}</div>
-              `;
-
-                presetFramesContainer.appendChild(frameGroup);
-              });
-
-              showModal(createPresetModal);
-            } else {
-              showErrorMessage("No frames in selection");
+              // Set a flag to indicate we should create a preset after collection is created
+              window.createPresetAfterCollection = true;
             }
             break;
         }
@@ -3708,6 +4012,39 @@
       // Call this function after the DOM is loaded
       document.addEventListener('DOMContentLoaded', setupModalKeyboardHandling);
 
+      // Buy Me a Coffee button click handler
+      document.addEventListener('DOMContentLoaded', () => {
+        const bmcButton = document.getElementById('bmc-button');
+        if (bmcButton) {
+          bmcButton.addEventListener('click', () => {
+            // Open Buy Me a Coffee link in a browser window
+            parent.postMessage({
+              pluginMessage: {
+                type: 'open-url',
+                url: 'https://www.buymeacoffee.com/habeebrahman'
+              }
+            }, '*');
+            showSuccessMessage('Opening Buy Me a Coffee page...');
+          });
+        }
+        
+        // Premium bundle link click handler using event delegation
+        document.addEventListener('click', (e) => {
+          const premiumBundleBtn = e.target.closest('#premium-bundle-btn');
+          if (premiumBundleBtn) {
+            e.preventDefault();
+            // Open premium bundles link in a browser window
+            parent.postMessage({
+              pluginMessage: {
+                type: 'open-url',
+                url: 'https://saveframe.gumroad.com/'
+              }
+            }, '*');
+            showSuccessMessage('Opening premium frame bundles page...');
+          }
+        });
+      });
+
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
 
@@ -3770,6 +4107,19 @@
           hideModal(settingsModal);
           showSuccessMessage("Plugin data has been reset to defaults");
         }
+      });
+
+      // Help button and modal functionality
+      const helpButton = document.getElementById("help-button");
+      const helpModal = document.getElementById("help-modal");
+      const closeHelpBtn = document.getElementById("close-help-btn");
+
+      helpButton.addEventListener("click", () => {
+        showModal(helpModal);
+      });
+
+      closeHelpBtn.addEventListener("click", () => {
+        hideModal(helpModal);
       });
     </script>
   </body>
