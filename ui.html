@@ -392,24 +392,24 @@
         transition: opacity 0.2s ease;
       }
 
-      /* Make delete button more visible */
+      /* Make buttons more visible by default */
       .delete-collection-btn,
-      .share-collection-btn {
-        opacity: 30%;
+      .share-collection-btn,
+      .drag-handle {
+        opacity: 60% !important; /* Higher default opacity */
       }
 
+      /* Full opacity on hover or active collection */
       .delete-collection-btn:hover,
-      .share-collection-btn:hover {
-        opacity: 100%;
-      }
-
+      .share-collection-btn:hover,
+      .drag-handle:hover,
       .collection-header:hover .delete-collection-btn,
       .collection-header:hover .share-collection-btn,
       .collection-header:hover .drag-handle,
       .active-collection .collection-header .delete-collection-btn,
       .active-collection .collection-header .share-collection-btn,
       .active-collection .collection-header .drag-handle {
-        opacity: 1 !important;
+        opacity: 100% !important;
       }
 
       .collection-header .arrow {
@@ -501,6 +501,21 @@
         padding: 0;
         margin: 0;
         border: none;
+      }
+      
+      /* Enhance hover effect */
+      .preset-card:hover {
+        background-color: var(--hover-color);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Make delete button more visible on hover */
+      .preset-card .delete-preset-btn {
+        opacity: 40% !important;
+      }
+      
+      .preset-card:hover .delete-preset-btn {
+        opacity: 80% !important;
       }
 
       /* Make frame preview containers completely invisible in both dark and light mode */
@@ -643,8 +658,10 @@
       .preset-actions {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 2px;
         margin-left: 2px;
+        opacity: 1;
       }
 
       .favorite-btn,
@@ -665,6 +682,21 @@
         position: relative;
         margin-right: 1px;
       }
+      
+      /* Make delete preset button more visible */
+      .delete-preset-btn {
+        opacity: 60% !important;
+        color: var(--secondary-color);
+        transition: all 0.2s ease;
+      }
+      
+      .delete-preset-btn:hover,
+      .preset-card:hover .delete-preset-btn {
+        opacity: 100% !important;
+        color: var(--error-color);
+        background-color: rgba(255, 59, 48, 0.1);
+      }
+
       .collection-actions button {
         border: none;
         background: none;
@@ -727,10 +759,6 @@
       /* Explicitly override any parent hover effects */
       .preset-card:hover .favorite-btn:not(:hover):not(.active) {
         opacity: 0.1 !important;
-      }
-
-      .delete-preset-btn:hover {
-        background-color: var(--hover-color);
       }
 
       .preset-card:hover {
@@ -934,10 +962,10 @@
       }
 
       .empty-state {
-        padding: 16px;
+        padding: 20px;
         text-align: center;
         color: var(--secondary-color);
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .share-modal .share-link {
@@ -1209,6 +1237,82 @@
       ::-webkit-scrollbar-horizontal {
         display: none;
       }
+
+      /* Make delete button more visible in favorites section */
+      .collection-favorites .preset-card .delete-preset-btn {
+        opacity: 60% !important;
+      }
+      
+      .collection-favorites .preset-card:hover .delete-preset-btn {
+        opacity: 100% !important;
+      }
+
+      /* Settings modal styles */
+      .settings-section {
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 16px;
+      }
+
+      .settings-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .settings-section h3 {
+        font-size: 12px;
+        margin-bottom: 12px;
+        color: var(--text-color);
+      }
+
+      .settings-btn {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background-color: var(--button-color);
+        color: var(--text-color);
+        border: none;
+        cursor: pointer;
+        margin-bottom: 8px;
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .settings-btn svg {
+        margin-right: 8px;
+      }
+
+      .settings-btn.danger {
+        color: var(--error-color);
+      }
+
+      .settings-btn:hover {
+        background-color: var(--hover-color);
+      }
+
+      .settings-warning {
+        font-size: 10px;
+        color: var(--error-color);
+        margin-top: 4px;
+      }
+
+      .about-info {
+        padding: 8px 0;
+      }
+
+      .about-info p {
+        margin-bottom: 8px;
+        font-size: 11px;
+      }
+
+      .settings-description {
+        color: var(--secondary-color);
+        font-size: 10px;
+      }
+
+      /* Loading spinner */
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
@@ -1285,8 +1389,8 @@
             Import
           </button>
           <button
-            id="check-connection-btn"
-            data-tooltip="Verify Supabase connection"
+            id="settings-btn"
+            data-tooltip="Open plugin settings"
             style="margin-left: 8px"
           >
             <svg
@@ -1297,19 +1401,21 @@
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M10.5 6C10.5 8.48528 8.48528 10.5 6 10.5C3.51472 10.5 1.5 8.48528 1.5 6C1.5 3.51472 3.51472 1.5 6 1.5C8.48528 1.5 10.5 3.51472 10.5 6Z"
+                d="M6 7.75C6.9665 7.75 7.75 6.9665 7.75 6C7.75 5.0335 6.9665 4.25 6 4.25C5.0335 4.25 4.25 5.0335 4.25 6C4.25 6.9665 5.0335 7.75 6 7.75Z"
                 stroke="currentColor"
                 stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
               />
               <path
-                d="M4 6L5.25 7.25L8 4.5"
+                d="M9.5 6C9.5 6.11 9.495 6.215 9.485 6.32L10.5 7.115C10.59 7.19 10.615 7.315 10.56 7.415L9.685 8.915C9.63 9.015 9.51 9.055 9.405 9.015L8.215 8.53C8.04 8.66 7.85 8.77 7.65 8.86L7.45 10.115C7.43 10.22 7.34 10.3 7.23 10.3H5.48C5.37 10.3 5.28 10.22 5.265 10.115L5.065 8.86C4.865 8.77 4.675 8.66 4.5 8.53L3.31 9.015C3.205 9.055 3.085 9.015 3.03 8.915L2.155 7.415C2.1 7.315 2.125 7.19 2.215 7.115L3.23 6.32C3.22 6.215 3.215 6.11 3.215 6C3.215 5.89 3.22 5.785 3.23 5.68L2.215 4.885C2.125 4.81 2.1 4.685 2.155 4.585L3.03 3.085C3.085 2.985 3.205 2.945 3.31 2.985L4.5 3.47C4.675 3.34 4.865 3.23 5.065 3.14L5.265 1.885C5.285 1.78 5.375 1.7 5.485 1.7H7.235C7.345 1.7 7.435 1.78 7.45 1.885L7.65 3.14C7.85 3.23 8.04 3.34 8.215 3.47L9.405 2.985C9.51 2.945 9.63 2.985 9.685 3.085L10.56 4.585C10.615 4.685 10.59 4.81 10.5 4.885L9.485 5.68C9.495 5.785 9.5 5.89 9.5 6Z"
                 stroke="currentColor"
                 stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
             </svg>
-            Test Connection
+            Settings
           </button>
         </div>
       </div>
@@ -1430,22 +1536,69 @@
               type="text"
               id="import-id"
               placeholder="Enter 6-character code"
-              autofocus
             />
             <div class="input-hint">
-              Enter the 6-character code shared with you to import a collection. 
-              Shared collections are available for 30 days after being shared.
+              Enter the 6-character code shared with you to import a collection.
             </div>
           </div>
         </div>
         <div class="form-actions">
           <button id="cancel-import-btn">Cancel</button>
-          <button id="import-collection-btn" class="primary">Import Collection</button>
+          <button id="import-collection-btn" class="primary">Import</button>
         </div>
       </div>
     </div>
 
-    <!-- Supabase Configuration Modal -->
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+      <div class="modal-content">
+        <div class="modal-header">Settings</div>
+        <div class="modal-body">
+          <div class="modal-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z" fill="var(--primary-color)"/>
+              <path d="M19.43 12.98C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.02L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.97 19.05 5.05L16.56 6.05C16.04 5.65 15.48 5.32 14.87 5.07L14.49 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.51 2.42L9.13 5.07C8.52 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.72 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.02C4.53 11.34 4.5 11.67 4.5 12C4.5 12.33 4.53 12.66 4.57 12.98L2.46 14.63C2.27 14.78 2.22 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.03 4.95 18.95L7.44 17.95C7.96 18.35 8.52 18.68 9.13 18.93L9.51 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.49 21.58L14.87 18.93C15.48 18.68 16.04 18.34 16.56 17.95L19.05 18.95C19.28 19.04 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.98Z" fill="var(--primary-color)" fill-opacity="0.5"/>
+            </svg>
+          </div>
+          
+          <div class="settings-section">
+            <h3>Connection</h3>
+            <button id="check-connection-btn" class="settings-btn">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.5 6C10.5 8.48528 8.48528 10.5 6 10.5C3.51472 10.5 1.5 8.48528 1.5 6C1.5 3.51472 3.51472 1.5 6 1.5C8.48528 1.5 10.5 3.51472 10.5 6Z" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M4 6L5.25 7.25L8 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Test Connection
+            </button>
+          </div>
+          
+          <div class="settings-section">
+            <h3>Data Management</h3>
+            <button id="reset-plugin-btn" class="settings-btn danger">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 10.5C8.48528 10.5 10.5 8.48528 10.5 6C10.5 3.51472 8.48528 1.5 6 1.5C3.51472 1.5 1.5 3.51472 1.5 6C1.5 8.48528 3.51472 10.5 6 10.5Z" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3.75 6H8.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Reset to Default
+            </button>
+            <p class="settings-warning">This will delete all your custom collections and restore the default ones.</p>
+          </div>
+          
+          <div class="settings-section">
+            <h3>About</h3>
+            <div class="about-info">
+              <p><strong>SaveFrame</strong> v1.0.0</p>
+              <p class="settings-description">A Figma plugin to save and reuse frame presets.</p>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="close-settings-btn" class="primary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase Config Modal -->
     <div class="modal" id="supabase-config-modal">
       <div class="modal-content">
         <div class="modal-header">Supabase Configuration</div>
@@ -1707,7 +1860,7 @@
           localStorage.setItem('device_id', deviceId);
           
           console.log("Using device ID:", deviceId);
-          
+
           // Delete existing non-built-in collections first
           const { error: deleteError } = await supabaseClient
             .from("collections")
@@ -1886,9 +2039,9 @@
 
           // Execute the query for exact match
           const { data: sharedCollections, error: fetchError } = await supabaseClient
-            .from("shared_collections")
-            .select("*")
-            .eq("share_id", shareCode);
+              .from("shared_collections")
+              .select("*")
+              .eq("share_id", shareCode);
 
           console.log("Query results:", {
             count: sharedCollections?.length || 0,
@@ -2360,7 +2513,7 @@
                     </div>
                   </div>
                   ${
-                    !collection.isBuiltIn && preset.dateCreated > 1000000000000
+                    !collection.isBuiltIn
                       ? `
                   <div class="preset-actions">
                     <button class="delete-preset-btn" data-id="${preset.id}" data-collection="${collection.id}" data-tooltip="Delete preset">
@@ -3267,16 +3420,16 @@
         expandedCollections.forEach((collectionId) => {
           if (collectionId !== pluginData.activeCollectionId) {
             // Skip active collection as it's already handled
-            const contentDiv = document.querySelector(
-              `.collection-content[data-collection-id="${collectionId}"]`
-            );
-            const header = document.querySelector(
-              `.collection-header[data-id="${collectionId}"]`
-            );
-            if (contentDiv) contentDiv.classList.add("expanded");
-            if (header) {
-              const arrow = header.querySelector(".arrow");
-              if (arrow) arrow.classList.add("expanded");
+          const contentDiv = document.querySelector(
+            `.collection-content[data-collection-id="${collectionId}"]`
+          );
+          const header = document.querySelector(
+            `.collection-header[data-id="${collectionId}"]`
+          );
+          if (contentDiv) contentDiv.classList.add("expanded");
+          if (header) {
+            const arrow = header.querySelector(".arrow");
+            if (arrow) arrow.classList.add("expanded");
             }
           }
         });
@@ -3323,12 +3476,12 @@
         
         while (attempts < maxAttempts) {
           // Generate a 6-character code
-          let result = "";
-          for (let i = 0; i < 6; i++) {
-            result += characters.charAt(
-              Math.floor(Math.random() * characters.length)
-            );
-          }
+        let result = "";
+        for (let i = 0; i < 6; i++) {
+          result += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+          );
+        }
           
           // Check if this ID already exists in the database
           const { data, error } = await supabaseClient
@@ -3340,7 +3493,7 @@
           if (error) {
             console.error("Error checking share ID uniqueness:", error);
             // If there's an error, just return the ID and hope for the best
-            return result;
+        return result;
           }
           
           // If no matching ID found, this ID is unique
@@ -3554,7 +3707,7 @@
       
       // Call this function after the DOM is loaded
       document.addEventListener('DOMContentLoaded', setupModalKeyboardHandling);
-      
+
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
 
@@ -3584,6 +3737,38 @@
 
             showSuccessMessage('Plugin data cleared successfully');
           }
+        }
+      });
+
+      // Settings button and modal
+      const settingsBtn = document.getElementById("settings-btn");
+      const settingsModal = document.getElementById("settings-modal");
+      const closeSettingsBtn = document.getElementById("close-settings-btn");
+      const resetPluginBtn = document.getElementById("reset-plugin-btn");
+
+      // Open settings modal
+      settingsBtn.addEventListener("click", () => {
+        showModal(settingsModal);
+      });
+
+      // Close settings modal
+      closeSettingsBtn.addEventListener("click", () => {
+        hideModal(settingsModal);
+      });
+
+      // Reset plugin to defaults
+      resetPluginBtn.addEventListener("click", () => {
+        if (confirm("Are you sure you want to reset the plugin to defaults? All your custom collections will be deleted.")) {
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "clear-plugin-data",
+              },
+            },
+            "*"
+          );
+          hideModal(settingsModal);
+          showSuccessMessage("Plugin data has been reset to defaults");
         }
       });
     </script>

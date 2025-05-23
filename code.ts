@@ -308,25 +308,39 @@ figma.showUI(__html__, { width: 320, height: 480 });
 // Main function to initialize the plugin
 async function initializePlugin() {
   try {
-    // Force reset to default collections
-    const initialData: PluginData = {
-      collections: defaultCollections,
-      activeCollectionId: "instagram",
-    };
+    // First try to load existing data from storage
+    const existingData = await figma.clientStorage.getAsync("framePresetsData");
+    
+    if (existingData) {
+      // If we have existing data, use it
+      console.log("Loaded existing plugin data:", existingData);
+      
+      // Send existing data to the UI
+      figma.ui.postMessage({
+        type: "init",
+        data: existingData,
+      });
+    } else {
+      // If no existing data, initialize with defaults
+      const initialData: PluginData = {
+        collections: defaultCollections,
+        activeCollectionId: "instagram",
+      };
 
-    // Save the default data to client storage
-    await savePluginData(initialData);
+      // Save the default data to client storage
+      await savePluginData(initialData);
+
+      console.log("Initialized plugin with default data:", initialData);
+
+      // Send initial data to the UI
+      figma.ui.postMessage({
+        type: "init",
+        data: initialData,
+      });
+    }
 
     // Store the hardcoded Supabase config
     await figma.clientStorage.setAsync("supabaseConfig", SUPABASE_CONFIG);
-
-    console.log("Plugin data initialized:", initialData);
-
-    // Send initial data to the UI
-    figma.ui.postMessage({
-      type: "init",
-      data: initialData,
-    });
 
     // Also send Supabase config
     figma.ui.postMessage({
