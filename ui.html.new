@@ -1312,6 +1312,33 @@
             Test Connection
           </button>
         </div>
+        <button
+          id="sync-btn"
+          data-tooltip="Sync your collections with Supabase"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M1 5.5C1 3.29086 2.79086 1.5 5 1.5C6.48052 1.5 7.77308 2.30205 8.46922 3.5M11 6.5C11 8.70914 9.20914 10.5 7 10.5C5.51948 10.5 4.22692 9.69795 3.53078 8.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+            <path
+              d="M9.5 1.5L8.5 3.5L10.5 3.5M2.5 10.5L3.5 8.5L1.5 8.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Sync
+        </button>
       </div>
 
       <div class="collections-container">
@@ -1469,6 +1496,32 @@
         </div>
       </div>
     </div>
+
+    <!-- Authentication Modal -->
+    <div class="modal" id="auth-modal">
+      <div class="modal-content">
+        <div class="modal-header">Authentication Required</div>
+        <div class="modal-body">
+          <div id="auth-form-container">
+            <p class="auth-message">Please sign in to sync your collections</p>
+            <div class="oauth-buttons">
+              <button id="google-signin-btn" class="google-button">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png"
+                  alt="Google"
+                  style="width: 16px; height: 16px; margin-right: 8px"
+                />
+                Sign in with Google
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="cancel-auth-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       // ============================================================
       // Global state
@@ -1562,6 +1615,11 @@
       const supabaseKeyInput = document.getElementById("supabase-key");
       const saveSupabaseBtn = document.getElementById("save-supabase-btn");
       const cancelSupabaseBtn = document.getElementById("cancel-supabase-btn");
+
+      // Auth Modal elements
+      const authModal = document.getElementById("auth-modal");
+      const googleSigninBtn = document.getElementById("google-signin-btn");
+      const cancelAuthBtn = document.getElementById("cancel-auth-btn");
 
       // ============================================================
       // Helper Functions
@@ -2976,6 +3034,14 @@
         hideModal(shareCollectionModal);
       });
 
+      // Sync button
+      syncBtn.addEventListener("click", async () => {
+        const success = await syncToSupabase();
+        if (success) {
+          showSuccessMessage("Sync completed successfully");
+        }
+      });
+
       // Test connection button
       checkConnectionBtn.addEventListener("click", async () => {
         if (!supabaseClient) {
@@ -3029,6 +3095,87 @@
       // Cancel Supabase config
       cancelSupabaseBtn.addEventListener("click", () => {
         hideModal(supabaseConfigModal);
+      });
+
+      // Google Sign-in button
+      googleSigninBtn.addEventListener("click", async () => {
+        try {
+          if (!supabaseClient) {
+            showErrorMessage("Please configure Supabase first");
+            return;
+          }
+
+          // Instead of using the regular OAuth flow, use the email-based passwordless sign-in
+          const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              skipBrowserRedirect: false, // Let the main window handle it
+              redirectTo: window.location.origin + window.location.pathname,
+              queryParams: {
+                prompt: "select_account", // Always show account selection
+              },
+            },
+          });
+
+          if (error) {
+            console.error("Google auth error:", error);
+            showErrorMessage(
+              "Failed to start Google authentication: " + error.message
+            );
+            return;
+          }
+
+          // The window will be redirected to Google, and then back with the token in the URL
+          // No need for polling as the page will reload with auth data
+        } catch (error) {
+          console.error("Google sign-in error:", error);
+          showErrorMessage("An error occurred during Google sign-in.");
+        }
+      });
+
+      // Add a function to check URL for auth response on page load
+      async function checkForAuthRedirect() {
+        try {
+          // Get the hash fragment from the URL
+          const hash = window.location.hash;
+          if (hash && hash.includes("access_token")) {
+            // Parse the hash parameters
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get("access_token");
+
+            if (accessToken) {
+              // Auth was successful, notify the user
+              hideModal(authModal);
+              showSuccessMessage("Authentication successful!");
+
+              // Try to sync after successful authentication
+              setTimeout(() => {
+                syncToSupabase().then((success) => {
+                  if (success) {
+                    showSuccessMessage("Data has been synced successfully.");
+                  }
+                });
+              }, 1000);
+
+              // Clear the hash from the URL to avoid issues on refresh
+              if (history && history.replaceState) {
+                history.replaceState(null, null, " ");
+              } else {
+                window.location.hash = "";
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error checking auth redirect:", error);
+        }
+      }
+
+      // Check for auth redirect when page loads
+      window.addEventListener("load", checkForAuthRedirect);
+
+      // Cancel auth
+      cancelAuthBtn.addEventListener("click", () => {
+        hideModal(authModal);
       });
 
       // Load saved Supabase config on startup
