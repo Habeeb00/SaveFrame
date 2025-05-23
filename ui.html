@@ -868,18 +868,45 @@
       .modal-body {
         padding: 16px;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .modal-icon {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 16px;
+      }
+
+      .modal-icon svg {
+        opacity: 0.9;
+      }
+
+      .modal-description {
+        text-align: center;
+        margin-bottom: 12px;
+        font-size: 11px;
+        color: var(--text-color);
       }
 
       #preset-frames-container {
         max-height: 60vh;
         overflow-y: auto;
         padding-right: 4px;
+        width: 100%;
+      }
+
+      .form-group {
+        width: 100%;
       }
 
       .input-hint {
         font-size: 11px;
         color: var(--secondary-color);
-        margin-top: 4px;
+        margin-top: 8px;
+        line-height: 1.4;
+        text-align: center;
       }
 
       [data-theme="dark"] .input-hint {
@@ -915,17 +942,55 @@
 
       .share-modal .share-link {
         background-color: var(--active-color);
-        padding: 10px;
+        padding: 12px;
         border-radius: 4px;
         font-family: monospace;
         margin: 10px 0;
         word-break: break-all;
+        text-align: center;
+        font-size: 16px;
+        letter-spacing: 1px;
+        width: 100%;
+        font-weight: 500;
       }
 
       .copy-btn {
         margin-top: 8px;
-        width: 100%;
         justify-content: center;
+        width: auto;
+        flex-grow: 1;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        height: auto;
+        min-height: 44px;
+      }
+
+      /* Form inputs styling */
+      input[type="text"], input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-size: 12px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        margin-top: 4px;
+      }
+
+      input[type="text"]:focus, input[type="number"]:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.15);
+        outline: none;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        font-size: 11px;
+        color: var(--text-color);
       }
 
       /* Loading animation */
@@ -1311,6 +1376,11 @@
         <div class="modal-header">Create New Collection</div>
         <div class="modal-body">
           <div class="form-group">
+            <div class="modal-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z" fill="var(--primary-color)"/>
+              </svg>
+            </div>
             <label for="collection-name">Collection Name</label>
             <input
               type="text"
@@ -1319,13 +1389,13 @@
               autofocus
             />
             <div class="input-hint">
-              Create a collection to organize your frame presets
+              Collections help you organize related frame presets together for easy access.
             </div>
           </div>
         </div>
         <div class="form-actions">
           <button id="cancel-collection-btn">Cancel</button>
-          <button id="save-collection-btn" class="primary">Create</button>
+          <button id="save-collection-btn" class="primary">Create Collection</button>
         </div>
       </div>
     </div>
@@ -1351,8 +1421,16 @@
       <div class="modal-content">
         <div class="modal-header">Share Collection</div>
         <div class="modal-body">
-          <p>Share this ID with others to let them import your collection:</p>
+          <div class="modal-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z" fill="var(--primary-color)"/>
+            </svg>
+          </div>
+          <p class="modal-description">Share this code with others to let them import your collection:</p>
           <div class="share-link" id="share-link">...</div>
+          <div class="input-hint">
+            This shared collection will be available for 30 days. Anyone with this code can import your collection.
+          </div>
         </div>
         <div class="form-actions">
           <button id="copy-share-link" class="copy-btn primary">
@@ -1368,20 +1446,28 @@
       <div class="modal-content">
         <div class="modal-header">Import Collection</div>
         <div class="modal-body">
+          <div class="modal-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="var(--primary-color)"/>
+            </svg>
+          </div>
           <div class="form-group">
-            <label for="import-id">Collection ID</label>
+            <label for="import-id">Collection Code</label>
             <input
               type="text"
               id="import-id"
-              placeholder="Paste collection ID here"
+              placeholder="Enter 6-character code"
               autofocus
             />
-            <div class="input-hint">Enter a collection ID shared with you</div>
+            <div class="input-hint">
+              Enter the 6-character code shared with you to import a collection. 
+              Shared collections are available for 30 days after being shared.
+            </div>
           </div>
         </div>
         <div class="form-actions">
           <button id="cancel-import-btn">Cancel</button>
-          <button id="import-collection-btn" class="primary">Import</button>
+          <button id="import-collection-btn" class="primary">Import Collection</button>
         </div>
       </div>
     </div>
@@ -1542,6 +1628,14 @@
       // Show a modal
       function showModal(modal) {
         modal.classList.add("active");
+        
+        // Auto-focus on input fields if they exist
+        setTimeout(() => {
+          const input = modal.querySelector('input[autofocus]');
+          if (input) {
+            input.focus();
+          }
+        }, 100);
       }
 
       // Hide a modal
@@ -2638,8 +2732,32 @@
 
       // Create new collection
       newCollectionBtn.addEventListener("click", () => {
-        collectionNameInput.value = "";
+        // Generate a default collection name based on existing collections
+        let nextNumber = 1;
+        
+        // Find the highest numbered "Collection X" to determine the next number
+        if (pluginData && pluginData.collections && pluginData.collections.length > 0) {
+          const collectionNameRegex = /^Collection (\d+)$/;
+          
+          pluginData.collections.forEach(collection => {
+            const match = collection.name.match(collectionNameRegex);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (num >= nextNumber) {
+                nextNumber = num + 1;
+              }
+            }
+          });
+        }
+        
+        // Set the default collection name
+        collectionNameInput.value = `Collection ${nextNumber}`;
+        
+        // Show the modal and select the text for easy editing
         showModal(newCollectionModal);
+        setTimeout(() => {
+          collectionNameInput.select();
+        }, 100);
       });
 
       // Save new collection
@@ -2883,7 +3001,9 @@
                 copyShareLinkBtn.textContent = "Copied!";
                 setTimeout(() => {
                   copyShareLinkBtn.textContent = "Copy to Clipboard";
-                }, 2000);
+                  // Auto-close the modal after copying
+                  hideModal(shareCollectionModal);
+                }, 1000);
               })
               .catch((err) => fallbackCopyToClipboard(shareLink.textContent));
           } else {
@@ -2924,7 +3044,9 @@
             copyShareLinkBtn.textContent = "Copied!";
             setTimeout(() => {
               copyShareLinkBtn.textContent = "Copy to Clipboard";
-            }, 2000);
+              // Auto-close the modal after copying
+              hideModal(shareCollectionModal);
+            }, 1000);
           } else {
             console.error("Copy command was unsuccessful");
           }
@@ -3575,6 +3697,39 @@
         }
       }
 
+      // Add keyboard event handlers to modals for accessibility
+      function setupModalKeyboardHandling() {
+        // New Collection Modal
+        collectionNameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            saveCollectionBtn.click();
+          } else if (e.key === 'Escape') {
+            cancelCollectionBtn.click();
+          }
+        });
+        
+        // Import Collection Modal
+        importIdInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            importCollectionBtn.click();
+          } else if (e.key === 'Escape') {
+            cancelImportBtn.click();
+          }
+        });
+        
+        // Share Collection Modal (Escape to close)
+        shareCollectionModal.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            closeShareModalBtn.click();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            copyShareLinkBtn.click();
+          }
+        });
+      }
+      
+      // Call this function after the DOM is loaded
+      document.addEventListener('DOMContentLoaded', setupModalKeyboardHandling);
+      
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
 
