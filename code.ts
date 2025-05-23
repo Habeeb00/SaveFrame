@@ -151,6 +151,12 @@ const defaultCollections: Collection[] = [
   },
 ];
 
+// Hardcoded Supabase configuration - these will be used for all users
+const SUPABASE_CONFIG = {
+  url: "https://mrtcubtbzefdjvnnghen.supabase.co",  // Replace with your actual Supabase project URL
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydGN1YnRiemVmZGp2bm5naGVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzNDIwOTMsImV4cCI6MjA2MTkxODA5M30.yH2jGdHR7wHHyyBJy2dY-8wgpJl0dd9BDs3JRh_8IgQ"  // Replace with your actual anon/public key
+};
+
 // Simple fetch-based Supabase client implementation to avoid the complex library
 class SimpleSupabaseClient {
   private url: string;
@@ -189,8 +195,8 @@ class SimpleSupabaseClient {
   
   from(table: string) {
     return {
-      select: async () => {
-        const result = await this.fetchWithAuth(`/rest/v1/${table}?select=*`);
+      select: async (query: string = "*") => {
+        const result = await this.fetchWithAuth(`/rest/v1/${table}?select=${query}`);
         return { data: result, error: null };
       },
       upsert: async (data: any) => {
@@ -207,11 +213,25 @@ class SimpleSupabaseClient {
       },
       delete: () => {
         return {
-          not: async (_column: string, _operator: string, _value: string[]) => {
+          not: async (column: string, operator: string, value: string[]) => {
             try {
-              // In a real implementation we'd handle the not operator properly
-              // This is just a mock that always succeeds
-              return { data: [], error: null };
+              // Use the operator parameter in the query string
+              let queryParam = "";
+              
+              if (operator === "in") {
+                // Handle "not in" case
+                const notInQuery = value.map(v => `"${v}"`).join(',');
+                queryParam = `${column}=not.in.(${notInQuery})`;
+              } else {
+                // Handle other operators if needed
+                queryParam = `${column}=not.${operator}.(${value.join(',')})`;
+              }
+              
+              const result = await this.fetchWithAuth(
+                `/rest/v1/${table}?${queryParam}`,
+                { method: 'DELETE' }
+              );
+              return { data: result, error: null };
             } catch (error) {
               return { data: null, error };
             }
@@ -228,14 +248,16 @@ let supabaseClient: SimpleSupabaseClient | null = null;
 async function syncWithSupabase(data: PluginData): Promise<boolean> {
   if (!supabaseClient) {
     try {
-      // Use placeholder values - replace these with your actual values
-      const supabaseUrl = "https://your-project.supabase.co";
-      const supabaseKey = "your-anon-key";
+      // Initialize the client with hardcoded config
+      supabaseClient = new SimpleSupabaseClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+
+      // Test the connection
+      const { error: testError } = await supabaseClient
+        .from("collections")
+        .select("*");
+
+      if (testError) throw testError;
       
-      console.log("Initializing simple Supabase client");
-      
-      // Use our simple client instead
-      supabaseClient = new SimpleSupabaseClient(supabaseUrl, supabaseKey);
     } catch (error) {
       console.error("Failed to initialize Supabase client:", error);
       throw error;
@@ -255,7 +277,7 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
       throw deleteError;
     }
 
-    // Now insert all current collections
+    // Now insert all collections
     const { error } = await supabaseClient.from("collections").upsert(
       data.collections.map((collection) => ({
         id: collection.id,
@@ -272,15 +294,11 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
     data.lastSyncedAt = Date.now();
     await savePluginData(data);
 
-    figma.notify("Successfully synced all collections to Supabase");
+    console.log("Successfully synced all collections to Supabase");
     return true;
   } catch (error) {
     console.error("Sync error:", error);
-    figma.notify(
-      "Failed to sync collections to Supabase. See console for details.",
-      { error: true }
-    );
-    return false;
+    throw error;
   }
 }
 
@@ -290,35 +308,30 @@ figma.showUI(__html__, { width: 320, height: 480 });
 // Main function to initialize the plugin
 async function initializePlugin() {
   try {
-    // Try to load existing data from client storage
-    let pluginData: PluginData = await figma.clientStorage
-      .getAsync("framePresetsData")
-      .then((data) => {
-        // Check if the retrieved data is valid
-        if (data && data.collections) {
-          return data as PluginData;
-        } else {
-          throw new Error("Invalid or missing plugin data");
-        }
-      })
-      .catch(() => {
-        // If no data exists, create default data
-        const initialData: PluginData = {
-          collections: defaultCollections,
-          activeCollectionId: "instagram",
-        };
+    // Force reset to default collections
+    const initialData: PluginData = {
+      collections: defaultCollections,
+      activeCollectionId: "instagram",
+    };
 
-        // Save the default data to client storage
-        savePluginData(initialData);
-        return initialData;
-      });
+    // Save the default data to client storage
+    await savePluginData(initialData);
 
-    console.log("Plugin data initialized:", pluginData);
+    // Store the hardcoded Supabase config
+    await figma.clientStorage.setAsync("supabaseConfig", SUPABASE_CONFIG);
+
+    console.log("Plugin data initialized:", initialData);
 
     // Send initial data to the UI
     figma.ui.postMessage({
       type: "init",
-      data: pluginData,
+      data: initialData,
+    });
+
+    // Also send Supabase config
+    figma.ui.postMessage({
+      type: "supabase-config",
+      config: SUPABASE_CONFIG
     });
   } catch (error) {
     console.error("Error initializing plugin data:", error);
@@ -713,6 +726,11 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
             !favData.collections[favCollectionIndex].presets[presetIndex]
               .isFavorite;
 
+          // Preserve the active collection if specified
+          if (msg.preserveActiveCollection) {
+            favData.activeCollectionId = msg.preserveActiveCollection;
+          }
+
           await savePluginData(favData);
 
           figma.ui.postMessage({
@@ -721,6 +739,35 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
           });
         }
       }
+      break;
+
+    case "clear-plugin-data":
+      // Clear all stored data
+      await figma.clientStorage.deleteAsync("framePresetsData");
+      
+      // Re-initialize with default collections
+      const stockData: PluginData = {
+        collections: defaultCollections,  // This will restore the default built-in collections
+        activeCollectionId: "instagram"  // Set a default active collection
+      };
+      await savePluginData(stockData);
+      
+      // Reset to hardcoded Supabase config
+      await figma.clientStorage.setAsync("supabaseConfig", SUPABASE_CONFIG);
+      
+      // Notify UI about both updates
+      figma.ui.postMessage({
+        type: "update",
+        data: stockData
+      });
+
+      figma.ui.postMessage({
+        type: "supabase-config",
+        config: SUPABASE_CONFIG
+      });
+
+      // Notify user
+      console.log("Plugin data has been reset to default state");
       break;
 
     case "set-active-collection":
@@ -777,7 +824,7 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         data: collectionsData,
       });
 
-      figma.notify(`Collection "${msg.name}" created`);
+      console.log(`Collection "${msg.name}" created`);
       break;
 
     case "delete-collection":
@@ -811,7 +858,7 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
           data: deleteData,
         });
 
-        figma.notify(`Collection deleted`);
+        console.log(`Collection deleted`);
       }
       break;
 
@@ -856,15 +903,15 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       );
       const success = await syncWithSupabase(syncData);
       if (success) {
-        figma.notify("Syncing to Supabase completed");
+        console.log("Syncing to Supabase completed");
       } else {
-        figma.notify("Syncing to Supabase failed");
+        console.log("Syncing to Supabase failed");
       }
       break;
 
     case "import-from-supabase":
       // Handle importing from Supabase (will be implemented in the UI)
-      figma.notify("Importing from Supabase...");
+      console.log("Importing from Supabase...");
       break;
 
     case "resize-ui":
@@ -936,7 +983,7 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         data: reorderData,
       });
 
-      figma.notify("Collections reordered successfully");
+      console.log("Collections reordered successfully");
       break;
 
     case "save-imported-collection":
@@ -962,7 +1009,7 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       // Save the updated data to client storage
       await savePluginData(importedCollectionData);
 
-      figma.notify(
+      console.log(
         `Collection "${msg.collection.name}" imported and saved locally`
       );
 

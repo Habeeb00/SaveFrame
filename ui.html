@@ -575,7 +575,7 @@
       }
 
       [data-theme="dark"] .collection-name {
-        color:#f5f5f5;
+        color: #f5f5f5;
       }
 
       [data-theme="dark"] button {
@@ -689,7 +689,7 @@
       }
 
       .favorite-btn {
-        color: var(--text-secondary);
+        color: #ffcc33;
         padding: 0;
         margin: 0 4px;
         border-radius: 0;
@@ -700,11 +700,15 @@
         width: 17px;
         height: 17px;
         flex-shrink: 0;
-        opacity: 10%;
+        opacity: 0.1 !important;
+        transition: opacity 0.01s ease;
+        z-index: 1;
+        position: relative;
       }
 
       .favorite-btn.active {
-        color: var(--primary-color);
+        opacity: 1 !important;
+        color: #ffcc33;
         background: none;
         box-shadow: none;
       }
@@ -714,20 +718,19 @@
         stroke-width: 1.5px;
       }
 
-      .delete-preset-btn:hover {
-        background-color: var(--hover-color);
-      }
-
+      /* Light up ONLY when hovering over the star itself */
       .favorite-btn:hover {
         background-color: transparent;
+        opacity: 1 !important;
       }
 
-      .delete-preset-btn {
-        color: var(--text-secondary);
+      /* Explicitly override any parent hover effects */
+      .preset-card:hover .favorite-btn:not(:hover):not(.active) {
+        opacity: 0.1 !important;
       }
 
       .delete-preset-btn:hover {
-        color: var(--error-color);
+        background-color: var(--hover-color);
       }
 
       .preset-card:hover {
@@ -1145,37 +1148,9 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   </head>
   <body data-theme="dark">
-    <!-- ( refresh button temp) -->
-    <button
-      id="refresh-ui-btn"
-      style="
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 9999;
-        background: #ffecb3;
-        color: #333;
-        border: 1px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 6px 12px;
-        font-size: 12px;
-        cursor: pointer;
-      "
-    >
-      Refresh UI
-    </button>
-    <script>
-      document
-        .getElementById("refresh-ui-btn")
-        .addEventListener("click", function () {
-          if (typeof renderCollections === "function") {
-            renderCollections();
-          }
-        });
-    </script>
     <div class="sidebar">
       <div class="header">
-        <h3>Frame Presets</h3>
+        <h3>Save Frame</h3>
         <div>
           <button
             id="create-preset-btn"
@@ -1886,7 +1861,7 @@
 
         try {
           // Get the share code from the input and save it in a variable
-          const shareCode = importIdInput.value.trim();
+          const shareCode = importIdInput.value.trim().toUpperCase();
           if (!shareCode) {
             showErrorMessage("Please enter a valid share code");
             // Focus the input field again
@@ -1901,41 +1876,13 @@
           // Debug log the actual input
           console.log("Attempting import with code:", shareCode);
 
-          let query;
-          let queryType = "unknown";
-
-          // Check if the input is a full UUID in standard format (8-4-4-4-12 characters)
-          const uuidPattern =
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-          if (uuidPattern.test(shareCode)) {
-            // If it's a full UUID, do an exact match
-            query = supabaseClient
-              .from("shared_collections")
-              .select("*")
-              .eq("share_id", shareCode);
-
-            queryType = "exact-uuid";
-            console.log("Using exact UUID match for:", shareCode);
-          } else {
-            // Otherwise, try the partial match approach
-            query = supabaseClient
-              .from("shared_collections")
-              .select("*")
-              .ilike("share_id", `${shareCode}%`);
-
-            queryType = "partial-match";
-            console.log("Using partial match for:", shareCode);
-          }
-
-          // Debug log the query before executing
-          console.log(`Executing ${queryType} query...`);
-
-          // Execute the query
-          const { data: sharedCollections, error: fetchError } = await query;
+          // Execute the query for exact match
+          const { data: sharedCollections, error: fetchError } = await supabaseClient
+            .from("shared_collections")
+            .select("*")
+            .eq("share_id", shareCode);
 
           console.log("Query results:", {
-            queryType,
             count: sharedCollections?.length || 0,
             error: fetchError?.message,
           });
@@ -2395,9 +2342,7 @@
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="${
                           preset.isFavorite ? "currentColor" : "none"
                         }" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="${
-                            preset.isFavorite ? "currentColor" : "transparent"
-                          }" stroke="currentColor" stroke-width="1.5"/>
+                          <path d="M5.95 1.37724C5.9776 1.32251 6.0224 1.32251 6.05 1.37724L7.5595 4.42717C7.57224 4.45394 7.59776 4.47125 7.62709 4.47456L10.9639 4.92686C11.0243 4.93462 11.0463 5.00876 11.0012 5.0529L8.55513 7.42616C8.53316 7.44749 8.52325 7.47852 8.52855 7.50779L9.12376 10.8254C9.13402 10.8855 9.07045 10.9328 9.01734 10.9054L6.07474 9.36736C6.0479 9.35256 6.0141 9.35438 5.98869 9.37122L3.10501 11.0304C3.05287 11.0608 2.98701 11.0163 2.99478 10.9559L3.47124 7.61922C3.47551 7.58973 3.46456 7.55909 3.44183 7.53851L0.9422 5.24822C0.895218 5.20623 0.914854 5.13149 0.97477 5.12181L4.29308 4.54424C4.32225 4.53993 4.34671 4.52183 4.35816 4.49471L5.95 1.37724Z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
                         </svg>
                       </button>
                       <div class="preset-dimensions">${formatDimensions(
@@ -2631,7 +2576,8 @@
             const collectionId = e.currentTarget.dataset.collection;
             const card = e.currentTarget.closest(".preset-card");
 
-            // Get the current expanded state to preserve it during animation
+            // Save expanded state and active collection before toggling
+            const activeCollectionId = pluginData.activeCollectionId;
             saveExpandedState();
 
             // Toggle the favorite state visually immediately for instant feedback
@@ -2642,11 +2588,7 @@
               if (svg) svg.setAttribute("fill", "transparent");
 
               // If removing from favorites section, animate removal
-              if (
-                card &&
-                document.querySelector(".favorites-section") &&
-                card.closest(".favorites-section")
-              ) {
+              if (card && card.closest(".collection-favorites")) {
                 card.classList.add("preset-card-removing");
                 // Wait for animation before notifying Figma
                 setTimeout(() => {
@@ -2657,6 +2599,7 @@
                         type: "toggle-favorite",
                         presetId,
                         collectionId,
+                        preserveActiveCollection: activeCollectionId,
                       },
                     },
                     "*"
@@ -2670,13 +2613,14 @@
               if (svg) svg.setAttribute("fill", "currentColor");
             }
 
-            // Notify Figma for normal cases
+            // Notify Figma while preserving active collection
             parent.postMessage(
               {
                 pluginMessage: {
                   type: "toggle-favorite",
                   presetId,
                   collectionId,
+                  preserveActiveCollection: activeCollectionId,
                 },
               },
               "*"
@@ -3357,17 +3301,36 @@
 
       // Function to restore expanded state
       function restoreExpandedState() {
-        expandedCollections.forEach((collectionId) => {
-          const contentDiv = document.querySelector(
-            `.collection-content[data-collection-id="${collectionId}"]`
+        // Ensure we have the active collection expanded
+        if (pluginData.activeCollectionId) {
+          const activeContentDiv = document.querySelector(
+            `.collection-content[data-collection-id="${pluginData.activeCollectionId}"]`
           );
-          const header = document.querySelector(
-            `.collection-header[data-id="${collectionId}"]`
+          const activeHeader = document.querySelector(
+            `.collection-header[data-id="${pluginData.activeCollectionId}"]`
           );
-          if (contentDiv) contentDiv.classList.add("expanded");
-          if (header) {
-            const arrow = header.querySelector(".arrow");
+          if (activeContentDiv) activeContentDiv.classList.add("expanded");
+          if (activeHeader) {
+            const arrow = activeHeader.querySelector(".arrow");
             if (arrow) arrow.classList.add("expanded");
+          }
+        }
+
+        // Restore other expanded collections
+        expandedCollections.forEach((collectionId) => {
+          if (collectionId !== pluginData.activeCollectionId) {
+            // Skip active collection as it's already handled
+            const contentDiv = document.querySelector(
+              `.collection-content[data-collection-id="${collectionId}"]`
+            );
+            const header = document.querySelector(
+              `.collection-header[data-id="${collectionId}"]`
+            );
+            if (contentDiv) contentDiv.classList.add("expanded");
+            if (header) {
+              const arrow = header.querySelector(".arrow");
+              if (arrow) arrow.classList.add("expanded");
+            }
           }
         });
       }
@@ -3405,17 +3368,50 @@
         }
       });
 
-      // Function to generate a short share ID (for display purposes)
-      function generateShareId() {
-        // Generate a 6-digit code with letters and numbers
+      // Function to generate a unique short share ID
+      async function generateUniqueShareId() {
         const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding similar looking characters
-        let result = "";
-        for (let i = 0; i < 6; i++) {
-          result += characters.charAt(
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (attempts < maxAttempts) {
+          // Generate a 6-character code
+          let result = "";
+          for (let i = 0; i < 6; i++) {
+            result += characters.charAt(
+              Math.floor(Math.random() * characters.length)
+            );
+          }
+          
+          // Check if this ID already exists in the database
+          const { data, error } = await supabaseClient
+            .from("shared_collections")
+            .select("share_id")
+            .eq("share_id", result)
+            .maybeSingle();
+            
+          if (error) {
+            console.error("Error checking share ID uniqueness:", error);
+            // If there's an error, just return the ID and hope for the best
+            return result;
+          }
+          
+          // If no matching ID found, this ID is unique
+          if (!data) {
+            return result;
+          }
+          
+          attempts++;
+        }
+        
+        // If we've tried too many times, generate a longer ID to ensure uniqueness
+        let fallbackId = "";
+        for (let i = 0; i < 8; i++) {
+          fallbackId += characters.charAt(
             Math.floor(Math.random() * characters.length)
           );
         }
-        return result;
+        return fallbackId;
       }
 
       // Function to share a collection
@@ -3435,16 +3431,18 @@
             return;
           }
 
+          // Generate a unique 6-character share ID
+          const shareId = await generateUniqueShareId();
+
           // Create a new entry in the shared_collections table
-          const { data: sharedCollection, error } = await supabaseClient
+          const { error } = await supabaseClient
             .from("shared_collections")
             .insert({
+              share_id: shareId,
               collection_id: collectionId,
               name: collection.name,
               presets: collection.presets,
-            })
-            .select("share_id")
-            .single();
+            });
 
           if (error) {
             console.error("Error sharing collection:", error);
@@ -3452,10 +3450,7 @@
             return;
           }
 
-          // Get the share_id from the response
-          const shareId = sharedCollection.share_id;
-
-          // Show the full share ID (not truncated) to ensure exact matching when importing
+          // Show the share ID
           shareLink.textContent = shareId;
           showModal(shareCollectionModal);
         } catch (error) {
@@ -3558,12 +3553,59 @@
               activeArrow.classList.add("expanded");
               activeContent.classList.add("expanded");
             }
+            return;
+          }
+        }
+
+        // If no active collection is set, default to the first collection
+        const firstCollection = document.querySelector(".collection");
+        if (firstCollection && !pluginData.activeCollectionId) {
+          const firstCollectionId = firstCollection.getAttribute("data-id");
+          pluginData.activeCollectionId = firstCollectionId;
+
+          const firstArrow = firstCollection.querySelector(".arrow");
+          const firstContent = firstCollection.querySelector(
+            ".collection-content"
+          );
+
+          if (firstArrow && firstContent) {
+            firstArrow.classList.add("expanded");
+            firstContent.classList.add("expanded");
           }
         }
       }
 
       // Signal to Figma that the UI is ready
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
+
+      // Add keyboard shortcut handler for clearing data (before the closing script tag)
+      
+      // Dev tools for clearing data
+      document.addEventListener('keydown', async (e) => {
+        // Ctrl + Shift + Delete to clear all plugin data
+        if (e.ctrlKey && e.shiftKey && e.key === 'Delete') {
+          if (confirm('⚠️ Development: Are you sure you want to clear all plugin data? This cannot be undone.')) {
+            // Clear the UI
+            pluginData = {
+              collections: [],
+              activeCollectionId: null,
+              lastSyncedAt: null
+            };
+            
+            // Clear the collections container
+            collectionsContainer.innerHTML = '<div class="empty-state">No collections. Create one using the "New Collection" button.</div>';
+            
+            // Notify Figma to clear storage
+            parent.postMessage({
+              pluginMessage: {
+                type: 'clear-plugin-data'
+              }
+            }, '*');
+
+            showSuccessMessage('Plugin data cleared successfully');
+          }
+        }
+      });
     </script>
   </body>
 </html>
