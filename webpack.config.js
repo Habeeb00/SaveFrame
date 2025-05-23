@@ -3,7 +3,7 @@ const webpack = require("webpack");
 
 module.exports = {
   mode: "production",
-  entry: "./code.ts",
+  entry: ["./code.ts"],
   module: {
     rules: [
       {
@@ -27,6 +27,9 @@ module.exports = {
       path: false,
       os: false,
     },
+    alias: {
+      '@supabase/supabase-js': path.resolve(__dirname, 'node_modules/@supabase/supabase-js')
+    }
   },
   output: {
     filename: "code.js",
@@ -36,7 +39,7 @@ module.exports = {
       type: "var",
       name: "plugin",
     },
-    globalObject: "this", // Define the global object reference
+    globalObject: "this",
   },
   experiments: {
     asyncWebAssembly: true, // Enable async WebAssembly support
