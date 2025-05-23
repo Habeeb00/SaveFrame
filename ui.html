@@ -1724,10 +1724,10 @@
             <input
               type="text"
               id="import-id"
-              placeholder="Enter 6-character code"
+              placeholder="Paste the 6-character code"
             />
             <div class="input-hint">
-              Enter the 6-character code shared with you to import a collection.
+              Paste the 6-character code shared with you to import a collection.
             </div>
           </div>
         </div>
@@ -1911,13 +1911,33 @@
 
       async function initSupabase(url, key) {
         try {
+          // Check if we already have a client with the same URL and key
+          if (supabaseClient) {
+            // If the URL and key are the same, reuse the existing client
+            if (supabaseClient.supabaseUrl === url && supabaseClient.supabaseKey === key) {
+              console.log("Reusing existing Supabase client");
+              return true;
+            }
+            
+            // If different URL or key, log a message but don't create a new instance
+            // to avoid the multiple GoTrueClient warning
+            console.log("Supabase client already exists with different credentials");
+            return true;
+          }
+          
+          // Create a new client only if one doesn't exist yet
           supabaseClient = supabase.createClient(url, key, {
             auth: {
               autoRefreshToken: true,
-              persistSession: true,
-              detectSessionInUrl: true,
-            },
+              persistSession: false, // Don't persist session to avoid conflicts
+              detectSessionInUrl: false // Don't detect session in URL to avoid conflicts
+            }
           });
+          
+          // Store the URL and key on the client for later comparison
+          supabaseClient.supabaseUrl = url;
+          supabaseClient.supabaseKey = key;
+          
           return true;
         } catch (error) {
           console.error("Failed to initialize Supabase:", error);
@@ -2094,35 +2114,55 @@
 
       // Sync data to Supabase
       async function syncToSupabase() {
-        if (!supabaseClient) {
-          const url = supabaseUrlInput.value.trim();
-          const key = supabaseKeyInput.value.trim();
-
-          if (!url || !key) {
-            showModal(supabaseConfigModal);
-            return false;
-          }
-
-          const success = await initSupabase(url, key);
-          if (!success) {
-            showErrorMessage("Failed to initialize Supabase");
-            return false;
-          }
-
-          // Save config using Figma's storage via message passing
-          parent.postMessage(
-            {
-              pluginMessage: {
-                type: "save-supabase-config",
-                url: url,
-                key: key,
-              },
-            },
-            "*"
-          );
-        }
-
         try {
+          // Initialize Supabase if needed
+          if (!supabaseClient) {
+            // Try to use saved config first
+            if (supabaseConfig.url && supabaseConfig.key) {
+              const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+              if (!success) {
+                showErrorMessage("Failed to initialize Supabase");
+                return false;
+              }
+            } else {
+              // If no saved config, try to get from inputs
+              const url = supabaseUrlInput.value.trim();
+              const key = supabaseKeyInput.value.trim();
+
+              if (!url || !key) {
+                showModal(supabaseConfigModal);
+                return false;
+              }
+
+              const success = await initSupabase(url, key);
+              if (!success) {
+                showErrorMessage("Failed to initialize Supabase");
+                return false;
+              }
+
+              // Save config using Figma's storage via message passing
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: "save-supabase-config",
+                    url: url,
+                    key: key,
+                  },
+                },
+                "*"
+              );
+              
+              // Update local config
+              supabaseConfig = { url, key };
+            }
+          }
+
+          // Check if Supabase client exists after initialization attempts
+          if (!supabaseClient) {
+            showErrorMessage("Failed to initialize Supabase client");
+            return false;
+          }
+
           // Use device ID instead of user authentication
           const deviceId = localStorage.getItem('device_id') || `device-${Date.now()}`;
           localStorage.setItem('device_id', deviceId);
@@ -2281,13 +2321,6 @@
 
       // Add function to import from Supabase using a share code
       async function importSharedCollection() {
-        if (!supabaseClient) {
-          showErrorMessage("Please configure Supabase first");
-          // Focus the input field again
-          setTimeout(() => importIdInput.focus(), 10);
-          return false;
-        }
-
         try {
           // Get the share code from the input and save it in a variable
           const shareCode = importIdInput.value.trim().toUpperCase();
@@ -2301,6 +2334,27 @@
           // Show loading state
           importCollectionBtn.disabled = true;
           importCollectionBtn.textContent = "Importing...";
+
+          // Initialize Supabase client if needed
+          if (!supabaseClient && supabaseConfig.url && supabaseConfig.key) {
+            const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+            if (!success) {
+              importCollectionBtn.disabled = false;
+              importCollectionBtn.textContent = "Import";
+              showErrorMessage("Failed to initialize connection");
+              return false;
+            }
+          }
+
+          // Check if Supabase client exists
+          if (!supabaseClient) {
+            importCollectionBtn.disabled = false;
+            importCollectionBtn.textContent = "Import";
+            showErrorMessage("Please configure Supabase first");
+            // Focus the input field again
+            setTimeout(() => importIdInput.focus(), 10);
+            return false;
+          }
 
           // Debug log the actual input
           console.log("Attempting import with code:", shareCode);
@@ -3328,7 +3382,7 @@
           hideModal(importCollectionModal);
           showSuccessMessage("Collection imported successfully");
         } else {
-          showErrorMessage("Failed to import collection");
+          showErrorMessage("Collection already exists");
         }
       });
 
@@ -3464,7 +3518,7 @@
         hideModal(supabaseConfigModal);
       });
 
-      // Load saved Supabase config on startup
+      // Load saved Supabase config on startup - update to avoid multiple initializations
       window.addEventListener("load", () => {
         // Request Supabase config from plugin instead of using localStorage
         parent.postMessage(
@@ -3607,9 +3661,15 @@
           case "supabase-config":
             // Received Supabase configuration from plugin
             if (msg.config && msg.config.url && msg.config.key) {
+              // Only update the input fields, don't initialize yet
               supabaseUrlInput.value = msg.config.url;
               supabaseKeyInput.value = msg.config.key;
-              initSupabase(msg.config.url, msg.config.key);
+              
+              // Store the config for later use
+              supabaseConfig = msg.config;
+              
+              // Only initialize when actually needed (when performing operations)
+              console.log("Received Supabase config, will initialize when needed");
             }
             break;
 
@@ -3774,34 +3834,53 @@
 
       // Function to generate a unique short share ID
       async function generateUniqueShareId() {
+        // Check if Supabase client exists
+        if (!supabaseClient) {
+          console.error("Supabase client not initialized");
+          // Return a random ID without checking uniqueness
+          const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+          let result = "";
+          for (let i = 0; i < 6; i++) {
+            result += characters.charAt(
+              Math.floor(Math.random() * characters.length)
+            );
+          }
+          return result;
+        }
+
         const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding similar looking characters
         let attempts = 0;
         const maxAttempts = 10;
         
         while (attempts < maxAttempts) {
           // Generate a 6-character code
-        let result = "";
-        for (let i = 0; i < 6; i++) {
-          result += characters.charAt(
-            Math.floor(Math.random() * characters.length)
-          );
-        }
-          
-          // Check if this ID already exists in the database
-          const { data, error } = await supabaseClient
-            .from("shared_collections")
-            .select("share_id")
-            .eq("share_id", result)
-            .maybeSingle();
-            
-          if (error) {
-            console.error("Error checking share ID uniqueness:", error);
-            // If there's an error, just return the ID and hope for the best
-        return result;
+          let result = "";
+          for (let i = 0; i < 6; i++) {
+            result += characters.charAt(
+              Math.floor(Math.random() * characters.length)
+            );
           }
           
-          // If no matching ID found, this ID is unique
-          if (!data) {
+          try {
+            // Check if this ID already exists in the database
+            const { data, error } = await supabaseClient
+              .from("shared_collections")
+              .select("share_id")
+              .eq("share_id", result)
+              .maybeSingle();
+              
+            if (error) {
+              console.error("Error checking share ID uniqueness:", error);
+              // If there's an error, just return the ID and hope for the best
+              return result;
+            }
+            
+            // If no matching ID found, this ID is unique
+            if (!data) {
+              return result;
+            }
+          } catch (err) {
+            console.error("Error in generateUniqueShareId:", err);
             return result;
           }
           
@@ -3820,11 +3899,6 @@
 
       // Function to share a collection
       async function shareCollection(collectionId) {
-        if (!supabaseClient) {
-          showErrorMessage("Please configure Supabase first");
-          return;
-        }
-
         try {
           // Find the collection
           const collection = pluginData.collections.find(
@@ -3832,6 +3906,21 @@
           );
           if (!collection) {
             showErrorMessage("Collection not found");
+            return;
+          }
+
+          // Initialize Supabase client if needed
+          if (!supabaseClient && supabaseConfig.url && supabaseConfig.key) {
+            const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+            if (!success) {
+              showErrorMessage("Failed to initialize connection");
+              return;
+            }
+          }
+
+          // Check if Supabase client exists
+          if (!supabaseClient) {
+            showErrorMessage("Please configure Supabase first");
             return;
           }
 
