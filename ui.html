@@ -38,6 +38,8 @@
         /* Common transition variables */
         --transition-speed: 0.3s;
         --transition-function: ease;
+        --collection-transition-speed: 120ms;
+        --collection-transition-function: cubic-bezier(0.2, 0, 0.38, 0.9);
       }
 
       [data-theme="dark"] {
@@ -295,6 +297,7 @@
         border-bottom: 1px solid var(--border-color);
       }
 
+      /* Cleaned up toolbar styles */
       .toolbar {
         display: flex;
         justify-content: space-between;
@@ -305,6 +308,42 @@
       .toolbar-buttons {
         display: flex;
         gap: 8px;
+      }
+
+      #new-collection-btn,
+      #import-btn,
+      #settings-btn {
+        background-color: #f0f0f0;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 6px 12px;
+        color: var(--text-color);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+
+      #new-collection-btn:hover,
+      #import-btn:hover,
+      #settings-btn:hover {
+        background-color: #e8e8e8;
+        border-color: #d0d0d0;
+      }
+
+      [data-theme="dark"] #new-collection-btn,
+      [data-theme="dark"] #import-btn,
+      [data-theme="dark"] #settings-btn {
+        background-color: #3a3a3c;
+        border: transparent;
+        border-radius: 4px;
+        padding: 6px 12px;
+        color: #ffffff;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+
+      [data-theme="dark"] #new-collection-btn:hover,
+      [data-theme="dark"] #import-btn:hover,
+      [data-theme="dark"] #settings-btn:hover {
+        background-color: #4a4a4c;
+        border-color: #666;
       }
 
       .collection-header {
@@ -413,7 +452,7 @@
       }
 
       .collection-header .arrow {
-        transition: transform 0.3s, color 0.2s;
+        transition: none;
         margin-left: 4px;
         color: var(--text-secondary);
         display: flex;
@@ -449,11 +488,12 @@
       .collection-content {
         overflow: hidden;
         max-height: 0;
-        visibility: hidden; /* Use visibility instead of opacity */
-        transition: max-height 0.3s var(--transition-function),
-          visibility 0s linear 0.3s; /* Delay visibility change */
+        opacity: 0;
+        visibility: hidden;
+        transition: none;
         margin: 0;
         padding: 0;
+        transform-origin: top;
       }
 
       /* Prevent favorites from visually re-expanding due to layout reflow */
@@ -462,18 +502,11 @@
       }
 
       .collection-content.expanded {
-        max-height: 2000px;
-        visibility: visible; /* Use visibility instead of opacity */
-        transition: max-height 0.3s var(--transition-function),
-          visibility 0s linear 0s; /* No delay for visibility */
+        max-height: none;
+        opacity: 1;
+        visibility: visible;
+        transition: none;
         border-top: none;
-      }
-      c .presets-list {
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
       }
 
       .preset-card {
@@ -502,18 +535,44 @@
         margin: 0;
         border: none;
       }
-      
+
+      /* Add animation for child items when expanding */
+      @keyframes fadeInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-3px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .collection-content.expanded .preset-card {
+        animation: none;
+      }
+
+      /* Remove animation for child items when expanding */
+      .collection-content.expanded .preset-card:nth-child(1),
+      .collection-content.expanded .preset-card:nth-child(2),
+      .collection-content.expanded .preset-card:nth-child(3),
+      .collection-content.expanded .preset-card:nth-child(4),
+      .collection-content.expanded .preset-card:nth-child(5),
+      .collection-content.expanded .preset-card:nth-child(n+6) {
+        animation-delay: 0ms;
+      }
+
       /* Enhance hover effect */
       .preset-card:hover {
         background-color: var(--hover-color);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
-      
+
       /* Make delete button more visible on hover */
       .preset-card .delete-preset-btn {
         opacity: 40% !important;
       }
-      
+
       .preset-card:hover .delete-preset-btn {
         opacity: 80% !important;
       }
@@ -682,14 +741,14 @@
         position: relative;
         margin-right: 1px;
       }
-      
+
       /* Make delete preset button more visible */
       .delete-preset-btn {
         opacity: 60% !important;
         color: var(--secondary-color);
         transition: all 0.2s ease;
       }
-      
+
       .delete-preset-btn:hover,
       .preset-card:hover .delete-preset-btn {
         opacity: 100% !important;
@@ -825,6 +884,7 @@
         color: var(--star-color);
       }
 
+      /* Center the support creator button in the status bar */
       .status-bar {
         border-top: 0.3px solid var(--border-color);
         padding: 8px 16px;
@@ -832,6 +892,178 @@
         justify-content: space-between;
         align-items: center;
         margin-top: auto;
+        gap: 16px;
+      }
+      .status-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .help-button {
+        margin-right: 16px;
+      }
+      .theme-toggle {
+        margin-left: auto;
+      }
+      #bmc-button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background-color: transparent;
+        padding: 4px 12px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 20px;
+        box-shadow: none;
+        border: none;
+        margin-left: 15px;
+      }
+      #bmc-button:hover {
+        background-color: var(--hover-color);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px var(--shadow-color);
+      }
+      .bmc-emoji {
+        font-size: 14px;
+        margin-right: 4px;
+      }
+
+      /* Settings modal improvements */
+      .modal-content {
+        background-color: var(--bg-color);
+        border-radius: 8px;
+        padding: 0;
+        width: 90%;
+        max-width: 340px;
+        box-shadow: 0 8px 24px var(--shadow-color);
+        max-height: 80vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-header {
+        padding: 18px 20px 12px 20px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+        color: var(--heading-color);
+        background: var(--bg-color);
+      }
+      .modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        background: var(--bg-color);
+      }
+      .settings-section {
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .settings-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      .settings-section h3 {
+        font-size: 13px;
+        margin-bottom: 6px;
+        color: var(--heading-color);
+        font-weight: 600;
+        text-align: left;
+      }
+      .settings-btn {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 5px;
+        background-color: var(--hover-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        margin-bottom: 8px;
+        width: 100%;
+        justify-content: flex-start;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background 0.2s, border 0.2s;
+      }
+      .settings-btn svg {
+        margin-right: 8px;
+      }
+      .settings-btn.danger {
+        color: var(--error-color);
+        border-color: var(--error-color);
+        background: rgba(255, 59, 48, 0.05);
+      }
+      .settings-btn:hover {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+      }
+      .settings-warning {
+        font-size: 11px;
+        color: var(--error-color);
+        margin-top: 4px;
+        margin-bottom: 0;
+      }
+      .about-info {
+        padding: 4px 0 0 0;
+      }
+      .about-info p {
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: var(--text-color);
+      }
+      .settings-description {
+        color: var(--secondary-color);
+        font-size: 12px;
+        margin-top: 8px;
+        margin-bottom: 0;
+        text-align: left;
+        
+      }
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 0;
+        padding: 12px 20px;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--active-color);
+      }
+      [data-theme="dark"] .modal-content,
+      [data-theme="dark"] .modal-header,
+      [data-theme="dark"] .modal-body {
+        background: #232324;
+        color: #eee;
+      }
+      [data-theme="dark"] .settings-section {
+        border-color: #333;
+      }
+      [data-theme="dark"] .settings-btn {
+        background-color: #2c2c2e;
+        color: #eee;
+        border-color: #38383a;
+      }
+      [data-theme="dark"] .settings-btn.danger {
+        background: rgba(255, 59, 48, 0.08);
+        color: #ff4530;
+        border-color: #ff4530;
+      }
+      [data-theme="dark"] .settings-btn:hover {
+        background-color: #0a84ff;
+        color: #fff;
+        border-color: #0a84ff;
+      }
+      [data-theme="dark"] .form-actions {
+        background-color: #2a2a2c;
       }
 
       .help-button {
@@ -848,7 +1080,7 @@
       .help-button:hover {
         color: var(--primary-color);
       }
-      
+
       .help-text {
         font-size: 11px;
         font-weight: 500;
@@ -1010,7 +1242,8 @@
       }
 
       /* Form inputs styling */
-      input[type="text"], input[type="number"] {
+      input[type="text"],
+      input[type="number"] {
         width: 100%;
         padding: 10px;
         border: 1px solid var(--border-color);
@@ -1022,7 +1255,8 @@
         margin-top: 4px;
       }
 
-      input[type="text"]:focus, input[type="number"]:focus {
+      input[type="text"]:focus,
+      input[type="number"]:focus {
         border-color: var(--primary-color);
         box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.15);
         outline: none;
@@ -1257,16 +1491,16 @@
       .collection-favorites .preset-card .delete-preset-btn {
         opacity: 60% !important;
       }
-      
+
       .collection-favorites .preset-card:hover .delete-preset-btn {
         opacity: 100% !important;
       }
 
       /* Settings modal styles */
       .settings-section {
-        margin-bottom: 20px;
+        margin-bottom: 14px;
         border-bottom: 1px solid var(--border-color);
-        padding-bottom: 16px;
+        padding-bottom: 10px;
       }
 
       .settings-section:last-child {
@@ -1350,93 +1584,197 @@
 
       /* Help Modal Styles */
       .help-modal-body {
-        max-height: 60vh;
+        padding: 16px;
+        max-height: 65vh;
         overflow-y: auto;
       }
 
       .help-section {
         margin-bottom: 20px;
+        padding: 16px;
+        background: var(--bg-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px var(--shadow-color);
       }
 
       .help-section h3 {
-        font-size: 12px;
-        font-weight: 600;
+        color: var(--heading-color);
+        font-size: 14px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Feature grid */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .feature-card {
+        padding: 12px;
+        background: var(--hover-color);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+      }
+
+      .feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px var(--shadow-color);
+        border-color: var(--primary-color);
+      }
+
+      .feature-icon {
+        font-size: 20px;
         margin-bottom: 8px;
+        transition: transform 0.2s ease;
+      }
+
+      .feature-card:hover .feature-icon {
+        transform: scale(1.1);
+      }
+
+      .feature-card strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--heading-color);
+        font-size: 12px;
+      }
+
+      .feature-card p {
+        margin: 0;
         color: var(--text-color);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      /* Need Help Section */
+      .need-help-container {
+        background: linear-gradient(
+          to right,
+          var(--hover-color),
+          var(--bg-color)
+        );
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .help-tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .help-tip-card {
+        background: var(--bg-color);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+      }
+
+      .help-tip-card:hover {
+        border-color: var(--primary-color);
+        transform: translateX(4px);
+      }
+
+      .help-tip-card h4 {
+        font-size: 12px;
+        color: var(--heading-color);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .help-tip-card .help-list {
+        margin: 0;
       }
 
       .help-list {
-        padding-left: 16px;
+        list-style: none;
+        padding: 0;
         margin: 0;
       }
 
       .help-list li {
         margin-bottom: 8px;
-        line-height: 1.4;
-        font-size: 11px;
+        padding-left: 20px;
+        position: relative;
         color: var(--text-color);
+        font-size: 11px;
+        line-height: 1.5;
       }
 
-      .help-list li strong {
-        font-weight: 600;
+      .help-list li:before {
+        content: "→";
+        position: absolute;
+        left: 0;
         color: var(--primary-color);
       }
 
-      /* Support the Creator section */
-      .support-creator {
-        padding: 4px 16px;
-        border-top: 1px solid var(--border-color);
-        text-align: center;
-        background-color: transparent;
-        margin-bottom: 4px;
+      .help-list li:last-child {
+        margin-bottom: 0;
       }
 
-      .support-creator h4 {
-        font-size: 12px;
-        font-weight: 500;
-        margin-bottom: 10px;
-        color: var(--text-color);
+      /* Keyboard shortcuts */
+      .shortcuts-container {
+        background: var(--bg-color);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
       }
 
-      .bmc-button-container {
+      .shortcuts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+      }
+
+      .shortcut-item {
         display: flex;
-        justify-content: center;
         align-items: center;
-        margin-top: 6px;
-        margin-bottom: 6px;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
       }
 
-      .bmc-custom-button {
+      .shortcut-item:hover {
+        background-color: var(--hover-color);
+      }
+
+      .keyboard-shortcut {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .keyboard-key {
+        background: var(--hover-color);
+        padding: 3px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        font-family: monospace;
+        font-size: 11px;
+        min-width: 18px;
+        height: 18px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 5px 12px;
-        background-color: transparent;
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 10px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin: 0 auto;
+        box-shadow: 0 1px 2px var(--shadow-color);
       }
 
-      .bmc-custom-button:hover {
-        background-color: #5F7FFF;
-        color: white;
-        border-color: #5F7FFF;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-      }
-
-      .bmc-emoji {
-        margin-right: 6px;
-        font-size: 12px;
-      }
-
-      /* Premium bundles link */
       .premium-bundle-link {
         padding: 8px 16px;
         background-color: transparent;
@@ -1467,10 +1805,7 @@
         align-items: center;
         justify-content: center;
         padding: 2px 0;
-      }
-      
-      .premium-bundle-link:hover a {
-        color: var(--primary-color);
+        line-height: 1.4;
       }
 
       .premium-bundle-link .premium-icon {
@@ -1479,9 +1814,471 @@
         font-size: 10px;
         text-shadow: none;
       }
-      
+
       .premium-bundle-link:hover .premium-icon {
         color: gold;
+      }
+
+      .step-number {
+        width: 24px;
+        height: 24px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .step-content {
+        flex: 1;
+      }
+
+      .step-content strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--heading-color);
+        font-size: 12px;
+      }
+
+      .step-content p {
+        margin: 0;
+        color: var(--text-color);
+        line-height: 1.4;
+        font-size: 11px;
+        margin-top: 4px;
+      }
+
+      /* Support section styles */
+      .support-section {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--accent-color) 100%
+        );
+        color: white;
+      }
+
+      .support-section h3 {
+        color: white;
+      }
+
+      .support-content {
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+      }
+
+      .support-content p {
+        margin-bottom: 15px;
+      }
+
+      .support-email {
+        color: white;
+        text-decoration: underline;
+        font-weight: 500;
+      }
+
+      .support-email:hover {
+        color: var(--star-color);
+      }
+
+      /* UI reference styles */
+      .ui-reference {
+        display: inline-block;
+        padding: 2px 6px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 4px;
+        font-size: 10px;
+        margin: 0 2px;
+      }
+
+      /* Keyboard shortcut styles */
+      kbd {
+        display: inline-block;
+        padding: 2px 6px;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 11px;
+        color: var(--text-color);
+        box-shadow: 0 1px 1px var(--shadow-color);
+      }
+
+      /* Dark mode adjustments */
+      [data-theme="dark"] .step,
+      [data-theme="dark"] .feature-card,
+      [data-theme="dark"] .tip {
+        background: var(--hover-color);
+      }
+
+      [data-theme="dark"] .support-section {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--accent-color) 100%
+        );
+      }
+
+      [data-theme="dark"] kbd {
+        background: var(--bg-color);
+        border-color: var(--border-color);
+      }
+
+      /* Quick Start Guide Styles */
+      .quick-start-section {
+        background: transparent;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px var(--shadow-color);
+      }
+
+      .step-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .step {
+        background: var(--bg-color);
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        gap: 3px;
+        align-items: flex-start;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+        height: 100px;
+        margin-right: 3px;
+      }
+
+      .step::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: var(--primary-color);
+        opacity: 0.5;
+      }
+
+      .step:hover {
+        border-color: var(--primary-color);
+        transform: translateX(3px);
+      }
+
+      .step:hover::before {
+        opacity: 1;
+      }
+
+      .step-number {
+        background: var(--primary-color);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 10px;
+        flex-shrink: 0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .step-content {
+        flex: 1;
+      }
+
+      .step-content strong {
+        display: block;
+        color: var(--heading-color);
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .step-content p {
+        color: var(--text-color);
+        font-size: 11px;
+        line-height: 1.4;
+        margin: 0;
+      }
+
+      /* Tips container styles */
+      .tips-container {
+        background: transparent;
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+        margin-top: 12px;
+      }
+
+      /* Support section styles */
+      .support-section {
+        border-radius: 8px;
+        background-color: transparent;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+        margin-top: 12px;
+        box-shadow: 0 1px 3px var(--shadow-color);
+      }
+
+      .support-section h3 {
+        margin-bottom: 12px;
+      }
+
+      .support-content {
+        margin: 0;
+        background-color: transparent;
+      }
+
+      .support-content p {
+        margin-bottom: 12px;
+        color: var(--text-color);
+        font-size: 11px;
+        line-height: 1.5;
+        text-align: center;
+      }
+
+      .support-email {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+      }
+
+      .support-email:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+      }
+
+      /* Improve help list styles for better hierarchy */
+      .help-list li {
+        position: relative;
+        padding-left: 20px;
+        margin-bottom: 8px;
+        line-height: 1.5;
+        color: var(--text-color);
+        font-size: 11px;
+      }
+
+      .help-list li:before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--primary-color);
+        font-weight: bold;
+      }
+
+      /* Dark mode improvements */
+      [data-theme="dark"] .support-section {
+        background: transparent;
+        border-color: rgba(13, 153, 255, 0.3);
+      }
+
+      [data-theme="dark"] .tips-container {
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      /* Favorite Button Styles */
+      .favorite-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: color 0.2s ease;
+        color: var(--text-secondary);
+      }
+
+      .favorite-btn.active {
+        color: var(--star-color);
+      }
+
+      /* Light mode specific styles */
+      [data-theme="light"] .favorite-btn {
+        color: rgba(0, 0, 0, 0.3);
+      }
+
+      [data-theme="light"] .favorite-btn:hover {
+        color: var(--star-color);
+      }
+
+      [data-theme="dark"] button.primary {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+      }
+
+      [data-theme="dark"] button.primary:hover {
+        background-color: #1a90ff; /* Slightly lighter blue */
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Fix toolbar buttons in dark mode */
+      [data-theme="dark"] #new-collection-btn,
+      [data-theme="dark"] #import-btn,
+      [data-theme="dark"] #settings-btn {
+        background-color: #3a3a3c;
+        border: transparent;
+        border-radius: 4px;
+        padding: 6px 12px;
+        color: #ffffff;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+
+      [data-theme="dark"] #new-collection-btn:hover,
+      [data-theme="dark"] #import-btn:hover,
+      [data-theme="dark"] #settings-btn:hover {
+        background-color: #4a4a4c;
+        border-color: #666;
+      }
+
+      /* Toolbar button containers for light mode */
+      #new-collection-btn,
+      #import-btn,
+      #settings-btn {
+        background-color: #f0f0f0;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 6px 12px;
+        color: var(--text-color);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+
+      #new-collection-btn:hover,
+      #import-btn:hover,
+      #settings-btn:hover {
+        background-color: #e8e8e8;
+        border-color: #d0d0d0;
+      }
+
+      /* Fix spacing for support creator button */
+      #bmc-button {
+        margin-left: 10px;
+        gap: 4px;
+        background-color: transparent;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      #bmc-button:hover {
+        background-color: var(--hover-color);
+        transform: translateY(-1px);
+      }
+
+      .bmc-emoji {
+        font-size: 12px;
+        margin-right: 2px;
+      }
+
+      /* Fix toolbar spacing */
+      .toolbar-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* Style Help section like Quick Start */
+      .help-section.support-section {
+        background: linear-gradient(135deg, var(--hover-color) 0%, var(--bg-color) 100%);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px var(--shadow-color);
+      }
+
+      .help-section.support-section h3 {
+        color: var(--heading-color);
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+
+      .support-content {
+        background-color: var(--bg-color);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+      }
+
+      .support-content .help-list {
+        margin-top: 12px;
+      }
+
+      .support-content .help-list li {
+        position: relative;
+        padding-left: 20px;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+
+      .support-content .help-list li:before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--primary-color);
+        font-weight: bold;
+      }
+
+      /* Test Connection button fix for light mode */
+      #check-connection-btn.settings-btn {
+        background-color: var(--hover-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        font-weight: 500;
+        font-size: 12px;
+        transition: background 0.2s, border 0.2s;
+        width: 100%;
+        margin-top: 2px;
+        margin-bottom: 0;
+        align-self: stretch;
+      }
+      #check-connection-btn.settings-btn:hover {
+        background-color: #e0f2ff;
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+      [data-theme="dark"] #check-connection-btn.settings-btn {
+        background-color: #2c2c2e;
+        color: #eee;
+        border-color: #38383a;
+      }
+      [data-theme="dark"] #check-connection-btn.settings-btn:hover {
+        background-color: #0a84ff;
+        color: #fff;
+        border-color: #0a84ff;
+      }
+      .settings-btn.danger:hover {
+        background-color: #b2001a !important;
+        color: #fff !important;
+        border-color: #b2001a !important;
+      }
+
+      #bmc-button {
+        font-size: 11px;
+        margin-left: 8px;
+      }
+
+      #new-collection-btn,
+      #import-btn,
+      #settings-btn,
+      button,
+      .settings-btn,
+      .form-actions button,
+      #bmc-button {
+        border-radius: 4px !important;
       }
     </style>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -1599,26 +2396,42 @@
         <div class="premium-bundle-link">
           <a href="#" id="premium-bundle-btn">
             <span class="premium-icon">✨</span>
-            <strong>Premium Templates:</strong> Get Shopify & Print bundles!
+            <strong>Premium Templates & Bundles</strong>
           </a>
         </div>
       </div>
 
       <div class="status-bar">
-        <div class="help-button" id="help-button" data-tooltip="Help & Tips">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M7 10V10.01M7 4C5.89543 4 5 4.89543 5 6C5 7.10457 5.89543 8 7 8C8.10457 8 9 7.10457 9 6C9 4.89543 8.10457 4 7 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <span class="help-text">Help</span>
+        <div class="status-bar-left">
+          <div class="help-button" id="help-button" data-tooltip="Help & Tips">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M7 10V10.01M7 4C5.89543 4 5 4.89543 5 6C5 7.10457 5.89543 8 7 8C8.10457 8 9 7.10457 9 6C9 4.89543 8.10457 4 7 4Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="help-text">Help</span>
+          </div>
+
+          <button id="bmc-button" class="bmc-custom-button">
+            <span class="bmc-emoji">☕</span>
+            Support creator
+          </button>
         </div>
-        
-        <button id="bmc-button" class="bmc-custom-button">
-          <span class="bmc-emoji">☕</span>
-          Support creator
-        </button>
-        
-        <div class="theme-toggle" id="theme-toggle">
+        <div class="theme-toggle" id="theme-toggle" data-tooltip="Dark/Light mode">
           <svg
             width="14"
             height="14"
@@ -1645,8 +2458,17 @@
         <div class="modal-body">
           <div class="form-group">
             <div class="modal-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z" fill="var(--primary-color)"/>
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 13H13V17H11V13H7V11H11V7H13V11H17V13Z"
+                  fill="var(--primary-color)"
+                />
               </svg>
             </div>
             <label for="collection-name">Collection Name</label>
@@ -1657,13 +2479,16 @@
               autofocus
             />
             <div class="input-hint">
-              Collections help you organize related frame presets together for easy access.
+              Collections help you organize related frame presets together for
+              easy access.
             </div>
           </div>
         </div>
         <div class="form-actions">
           <button id="cancel-collection-btn">Cancel</button>
-          <button id="save-collection-btn" class="primary">Create Collection</button>
+          <button id="save-collection-btn" class="primary">
+            Create Collection
+          </button>
         </div>
       </div>
     </div>
@@ -1690,14 +2515,26 @@
         <div class="modal-header">Share Collection</div>
         <div class="modal-body">
           <div class="modal-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z" fill="var(--primary-color)"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z"
+                fill="var(--primary-color)"
+              />
             </svg>
           </div>
-          <p class="modal-description">Share this code with others to let them import your collection:</p>
+          <p class="modal-description">
+            Share this code with others to let them import your collection:
+          </p>
           <div class="share-link" id="share-link">...</div>
           <div class="input-hint">
-            This shared collection will be available for 30 days. Anyone with this code can import your collection.
+            This shared collection will be available for 30 days. Anyone with
+            this code can import your collection.
           </div>
         </div>
         <div class="form-actions">
@@ -1715,8 +2552,17 @@
         <div class="modal-header">Import Collection</div>
         <div class="modal-body">
           <div class="modal-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="var(--primary-color)"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z"
+                fill="var(--primary-color)"
+              />
             </svg>
           </div>
           <div class="form-group">
@@ -1744,40 +2590,91 @@
         <div class="modal-header">Settings</div>
         <div class="modal-body">
           <div class="modal-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z" fill="var(--primary-color)"/>
-              <path d="M19.43 12.98C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.02L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.97 19.05 5.05L16.56 6.05C16.04 5.65 15.48 5.32 14.87 5.07L14.49 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.51 2.42L9.13 5.07C8.52 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.72 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.02C4.53 11.34 4.5 11.67 4.5 12C4.5 12.33 4.53 12.66 4.57 12.98L2.46 14.63C2.27 14.78 2.22 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.03 4.95 18.95L7.44 17.95C7.96 18.35 8.52 18.68 9.13 18.93L9.51 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.49 21.58L14.87 18.93C15.48 18.68 16.04 18.34 16.56 17.95L19.05 18.95C19.28 19.04 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.98Z" fill="var(--primary-color)" fill-opacity="0.5"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z"
+                fill="var(--primary-color)"
+              />
+              <path
+                d="M19.43 12.98C19.47 12.66 19.5 12.34 19.5 12C19.5 11.66 19.47 11.34 19.43 11.02L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.97 19.05 5.05L16.56 6.05C16.04 5.65 15.48 5.32 14.87 5.07L14.49 2.42C14.46 2.18 14.25 2 14 2H10C9.75 2 9.54 2.18 9.51 2.42L9.13 5.07C8.52 5.32 7.96 5.66 7.44 6.05L4.95 5.05C4.72 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.02C4.53 11.34 4.5 11.67 4.5 12C4.5 12.33 4.53 12.66 4.57 12.98L2.46 14.63C2.27 14.78 2.22 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.03 4.95 18.95L7.44 17.95C7.96 18.35 8.52 18.68 9.13 18.93L9.51 21.58C9.54 21.82 9.75 22 10 22H14C14.25 22 14.46 21.82 14.49 21.58L14.87 18.93C15.48 18.68 16.04 18.34 16.56 17.95L19.05 18.95C19.28 19.04 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.98Z"
+                fill="var(--primary-color)"
+                fill-opacity="0.5"
+              />
             </svg>
           </div>
-          
+
           <div class="settings-section">
             <h3>Connection</h3>
             <button id="check-connection-btn" class="settings-btn">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10.5 6C10.5 8.48528 8.48528 10.5 6 10.5C3.51472 10.5 1.5 8.48528 1.5 6C1.5 3.51472 3.51472 1.5 6 1.5C8.48528 1.5 10.5 3.51472 10.5 6Z" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M4 6L5.25 7.25L8 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10.5 6C10.5 8.48528 8.48528 10.5 6 10.5C3.51472 10.5 1.5 8.48528 1.5 6C1.5 3.51472 3.51472 1.5 6 1.5C8.48528 1.5 10.5 3.51472 10.5 6Z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M4 6L5.25 7.25L8 4.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
               Test Connection
             </button>
+            <div class="settings-description">Test your Supabase connection to ensure cloud sync works.</div>
           </div>
-          
+
           <div class="settings-section">
             <h3>Data Management</h3>
             <button id="reset-plugin-btn" class="settings-btn danger">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 10.5C8.48528 10.5 10.5 8.48528 10.5 6C10.5 3.51472 8.48528 1.5 6 1.5C3.51472 1.5 1.5 3.51472 1.5 6C1.5 8.48528 3.51472 10.5 6 10.5Z" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M3.75 6H8.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 10.5C8.48528 10.5 10.5 8.48528 10.5 6C10.5 3.51472 8.48528 1.5 6 1.5C3.51472 1.5 1.5 3.51472 1.5 6C1.5 8.48528 3.51472 10.5 6 10.5Z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M3.75 6H8.25"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
               Reset to Default
             </button>
-            <p class="settings-warning">This will delete all your custom collections and restore the default ones.</p>
+            <p class="settings-warning">
+              This will delete all your custom collections and restore the
+              default ones.
+            </p>
           </div>
-          
+
           <div class="settings-section">
             <h3>About</h3>
             <div class="about-info">
               <p><strong>SaveFrame</strong> v1.0.0</p>
-              <p class="settings-description">A Figma plugin to save and reuse frame presets.</p>
+              <p class="settings-description">
+                A Figma plugin to save and reuse frame presets.
+              </p>
             </div>
           </div>
         </div>
@@ -1793,19 +2690,29 @@
         <div class="modal-header">Save Frame</div>
         <div class="modal-body">
           <div class="modal-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21Z" fill="var(--primary-color)" fill-opacity="0.5"/>
-              <path d="M14 15H10V19H14V15Z" fill="var(--primary-color)"/>
-              <path d="M8 11H16V13H8V11Z" fill="var(--primary-color)"/>
-              <path d="M8 7H16V9H8V7Z" fill="var(--primary-color)"/>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V19C21 20.1 20.1 21 19 21Z"
+                fill="var(--primary-color)"
+                fill-opacity="0.5"
+              />
+              <path d="M14 15H10V19H14V15Z" fill="var(--primary-color)" />
+              <path d="M8 11H16V13H8V11Z" fill="var(--primary-color)" />
+              <path d="M8 7H16V9H8V7Z" fill="var(--primary-color)" />
             </svg>
           </div>
           <div class="form-group">
             <label for="inline-frame-name">Frame Name</label>
-            <input 
-              type="text" 
-              id="inline-frame-name" 
-              placeholder="Enter frame name" 
+            <input
+              type="text"
+              id="inline-frame-name"
+              placeholder="Enter frame name"
               autofocus
             />
             <div class="frame-dimensions-info" id="frame-dimensions-info">
@@ -1823,45 +2730,145 @@
     <!-- Help Modal -->
     <div class="modal" id="help-modal">
       <div class="modal-content">
-        <div class="modal-header">Help & Tips</div>
+        <div class="modal-header">Welcome to Frame Presets! 🎨</div>
         <div class="modal-body help-modal-body">
           <div class="help-section">
-            <h3>Getting Started</h3>
+            <h3>🚀 Quick Start Guide</h3>
+            <div class="quick-start-section">
+              <div class="step-container">
+                  <div class="step-number">1</div>
+                  <div class="step-content">
+                    <strong>Create Collection</strong>
+                    <p>
+                      Start by creating a new collection to organize your
+                      frames. Click the "New Collection" button to get started.
+                    </p>
+                  </div>
+                  <div class="step-number">2</div>
+                  <div class="step-content">
+                    <strong>Save Frames</strong>
+                    <p>
+                      Select any frame in Figma and click "Save Frame" to add it
+                      to your active collection.
+                    </p>
+                  </div>
+                  <div class="step-number">3</div>
+                  <div class="step-content">
+                    <strong>Apply & Reuse</strong>
+                    <p>
+                      Click any saved frame to instantly apply its dimensions to
+                      your selected frame in Figma.
+                    </p>
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="help-section">
+            <h3>💡 Smart Features</h3>
+            <div class="feature-grid">
+              <div class="feature-card">
+                <div class="feature-icon">⭐</div>
+                <strong>Favorites</strong>
+                <p>Star frames for quick access to your most-used presets</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <strong>Share</strong>
+                <p>Export and share frame collections with your team</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">👁️</div>
+                <strong>Preview</strong>
+                <p>Visual preview of frame dimensions and aspect ratios</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🗂️</div>
+                <strong>Collections</strong>
+                <p>Organize related frames into collections</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <strong>Manage</strong>
+                <p>Rename, delete, and organize your frames</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <strong>Themes</strong>
+                <p>Switch between light and dark mode</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="help-section">
+            <h3>⌨️ Pro Tips & Shortcuts</h3>
+            <div class="tips-container">
+                <strong>Keyboard Shortcuts:</strong>
+                <ul class="help-list">
+                  <li><kbd>Enter</kbd> - Save when editing a frame name</li>
+                  <li><kbd>Esc</kbd> - Cancel or close any open modal</li>
+                </ul>
+            </div>
+          </div>
+
+          <div class="help-section">
+            <h3>🗂️ Managing Your Frames & Collections</h3>
             <ul class="help-list">
-              <li><strong>Create a collection</strong> - Click "New Collection" to organize your frames</li>
-              <li><strong>Save frames</strong> - Select a frame and click "Save Frame" to add it to your active collection</li>
-              <li><strong>Apply frames</strong> - Click on any saved frame to apply its dimensions and properties</li>
+              <li>
+                <strong>Add to Favorites:</strong> Click the star icon next to
+                any frame
+              </li>
+              <li>
+                <strong>Rename Frames:</strong> Double-click on frame names to
+                edit them
+              </li>
+              <li>
+                <strong>Delete Frames:</strong> Click the trash icon next to any
+                saved frame
+              </li>
+              <li>
+                <strong>Share Collections:</strong> Use the share button in
+                collection headers
+              </li>
+              <li>
+                <strong>Import Collections:</strong> Use the "Import" button
+                with shared codes
+              </li>
+              <li>
+                <strong>Organize:</strong> Drag and drop frames between
+                collections
+              </li>
+              <li>
+                <strong>Collection Management:</strong> Use the collection menu
+                for more options
+              </li>
             </ul>
           </div>
-          
-          <div class="help-section">
-            <h3>Working with Collections</h3>
-            <ul class="help-list">
-              <li><strong>Active collection</strong> - The highlighted collection is where new frames will be saved</li>
-              <li><strong>Drag & drop</strong> - Reorder collections by dragging their headers</li>
-              <li><strong>Built-in collections</strong> - Default collections can't be modified but can be used as templates</li>
-            </ul>
-          </div>
-          
-          <div class="help-section">
-            <h3>Keyboard Shortcuts</h3>
-            <ul class="help-list">
-              <li><strong>Enter</strong> - Save when editing a frame name</li>
-              <li><strong>Escape</strong> - Cancel current operation</li>
-            </ul>
-          </div>
-          
-          <div class="help-section">
-            <h3>Tips</h3>
-            <ul class="help-list">
-              <li>Star your favorite frames to access them quickly in the Favorites section</li>
-              <li>Use the Settings button to access plugin configuration</li>
-              <li>Toggle between light and dark mode using the theme button</li>
-            </ul>
+
+          <div class="help-section support-section">
+            <h3>🤝 Need Help?</h3>
+            <div class="support-content">
+              <p>We're here to help you make the most of Frame Presets!</p>
+              <ul class="help-list">
+                <li>
+                  📧 Email us at:
+                  <a
+                    href="mailto:rahmanhabeeb360@gmail.com"
+                    class="support-email"
+                    >rahmanhabeeb360@gmail.com</a
+                  >
+                </li>
+                <li>🌐 Visit our website for more resources and updates</li>
+                <li>
+                  ✨ Check out our premium frame bundles for additional
+                  templates
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <div class="form-actions">
-          <button id="close-help-btn" class="primary">Close</button>
+          <button id="close-help-btn" class="primary">Got it! 👍</button>
         </div>
       </div>
     </div>
@@ -1914,30 +2921,35 @@
           // Check if we already have a client with the same URL and key
           if (supabaseClient) {
             // If the URL and key are the same, reuse the existing client
-            if (supabaseClient.supabaseUrl === url && supabaseClient.supabaseKey === key) {
+            if (
+              supabaseClient.supabaseUrl === url &&
+              supabaseClient.supabaseKey === key
+            ) {
               console.log("Reusing existing Supabase client");
               return true;
             }
-            
+
             // If different URL or key, log a message but don't create a new instance
             // to avoid the multiple GoTrueClient warning
-            console.log("Supabase client already exists with different credentials");
+            console.log(
+              "Supabase client already exists with different credentials"
+            );
             return true;
           }
-          
+
           // Create a new client only if one doesn't exist yet
           supabaseClient = supabase.createClient(url, key, {
             auth: {
               autoRefreshToken: true,
               persistSession: false, // Don't persist session to avoid conflicts
-              detectSessionInUrl: false // Don't detect session in URL to avoid conflicts
-            }
+              detectSessionInUrl: false, // Don't detect session in URL to avoid conflicts
+            },
           });
-          
+
           // Store the URL and key on the client for later comparison
           supabaseClient.supabaseUrl = url;
           supabaseClient.supabaseKey = key;
-          
+
           return true;
         } catch (error) {
           console.error("Failed to initialize Supabase:", error);
@@ -2011,10 +3023,10 @@
       // Show a modal
       function showModal(modal) {
         modal.classList.add("active");
-        
+
         // Auto-focus on input fields if they exist
         setTimeout(() => {
-          const input = modal.querySelector('input[autofocus]');
+          const input = modal.querySelector("input[autofocus]");
           if (input) {
             input.focus();
           }
@@ -2119,7 +3131,10 @@
           if (!supabaseClient) {
             // Try to use saved config first
             if (supabaseConfig.url && supabaseConfig.key) {
-              const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+              const success = await initSupabase(
+                supabaseConfig.url,
+                supabaseConfig.key
+              );
               if (!success) {
                 showErrorMessage("Failed to initialize Supabase");
                 return false;
@@ -2151,7 +3166,7 @@
                 },
                 "*"
               );
-              
+
               // Update local config
               supabaseConfig = { url, key };
             }
@@ -2164,9 +3179,10 @@
           }
 
           // Use device ID instead of user authentication
-          const deviceId = localStorage.getItem('device_id') || `device-${Date.now()}`;
-          localStorage.setItem('device_id', deviceId);
-          
+          const deviceId =
+            localStorage.getItem("device_id") || `device-${Date.now()}`;
+          localStorage.setItem("device_id", deviceId);
+
           console.log("Using device ID:", deviceId);
 
           // Delete existing non-built-in collections first
@@ -2256,11 +3272,12 @@
 
         try {
           // Use device ID instead of user authentication
-          const deviceId = localStorage.getItem('device_id') || `device-${Date.now()}`;
-          localStorage.setItem('device_id', deviceId);
-          
+          const deviceId =
+            localStorage.getItem("device_id") || `device-${Date.now()}`;
+          localStorage.setItem("device_id", deviceId);
+
           console.log("Using device ID for import:", deviceId);
-          
+
           // Only get collections that belong to this device
           const { data, error } = await supabaseClient
             .from("collections")
@@ -2337,7 +3354,10 @@
 
           // Initialize Supabase client if needed
           if (!supabaseClient && supabaseConfig.url && supabaseConfig.key) {
-            const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+            const success = await initSupabase(
+              supabaseConfig.url,
+              supabaseConfig.key
+            );
             if (!success) {
               importCollectionBtn.disabled = false;
               importCollectionBtn.textContent = "Import";
@@ -2360,7 +3380,8 @@
           console.log("Attempting import with code:", shareCode);
 
           // Execute the query for exact match
-          const { data: sharedCollections, error: fetchError } = await supabaseClient
+          const { data: sharedCollections, error: fetchError } =
+            await supabaseClient
               .from("shared_collections")
               .select("*")
               .eq("share_id", shareCode);
@@ -2766,7 +3787,7 @@
                     <path d="M1 3H11M4 3V2.5C4 1.67157 4.67157 1 5.5 1H6.5C7.32843 1 8 1.67157 8 2.5V3M9 3V10C9 10.5523 8.55228 11 8 11H4C3.44772 11 3 10.5523 3 10V3" stroke="currentColor" stroke-width="1.5"/>
                   </svg>
                 </button>
-                <div class="drag-handle">
+                <div class="drag-handle" data-tooltip="Drag to reorder">
                   <svg width="10" height="10" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M7 5H5M7 10H5M7 15H5M15 5H13M15 10H13M15 15H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -2866,7 +3887,7 @@
         premiumBundleEl.innerHTML = `
           <a href="#" id="premium-bundle-btn">
             <span class="premium-icon">✨</span>
-            Premium Templates & Bundles
+            <strong>Premium Templates & Bundles</strong>
           </a>
         `;
         collectionsContainer.appendChild(premiumBundleEl);
@@ -3134,12 +4155,16 @@
       newCollectionBtn.addEventListener("click", () => {
         // Generate a default collection name based on existing collections
         let nextNumber = 1;
-        
+
         // Find the highest numbered "Collection X" to determine the next number
-        if (pluginData && pluginData.collections && pluginData.collections.length > 0) {
+        if (
+          pluginData &&
+          pluginData.collections &&
+          pluginData.collections.length > 0
+        ) {
           const collectionNameRegex = /^Collection (\d+)$/;
-          
-          pluginData.collections.forEach(collection => {
+
+          pluginData.collections.forEach((collection) => {
             const match = collection.name.match(collectionNameRegex);
             if (match) {
               const num = parseInt(match[1], 10);
@@ -3149,10 +4174,10 @@
             }
           });
         }
-        
+
         // Set the default collection name
         collectionNameInput.value = `Collection ${nextNumber}`;
-        
+
         // Show the modal and select the text for easy editing
         showModal(newCollectionModal);
         setTimeout(() => {
@@ -3561,34 +4586,45 @@
 
           case "inline-name-edit":
             // Handle the inline name edit request
-            const inlineNameEditModal = document.getElementById("inline-name-edit-modal");
-            const inlineFrameNameInput = document.getElementById("inline-frame-name");
-            const frameDimensionsInfo = document.getElementById("frame-dimensions-info");
-            const saveInlineEditBtn = document.getElementById("save-inline-edit-btn");
-            const cancelInlineEditBtn = document.getElementById("cancel-inline-edit-btn");
-            
+            const inlineNameEditModal = document.getElementById(
+              "inline-name-edit-modal"
+            );
+            const inlineFrameNameInput =
+              document.getElementById("inline-frame-name");
+            const frameDimensionsInfo = document.getElementById(
+              "frame-dimensions-info"
+            );
+            const saveInlineEditBtn = document.getElementById(
+              "save-inline-edit-btn"
+            );
+            const cancelInlineEditBtn = document.getElementById(
+              "cancel-inline-edit-btn"
+            );
+
             // Store frame data for later use
             window.currentFrameData = {
               frameWidth: msg.frameWidth,
               frameHeight: msg.frameHeight,
               targetCollectionId: msg.targetCollectionId,
-              frameProps: msg.frameProps
+              frameProps: msg.frameProps,
             };
-            
+
             // Set the initial name value
             inlineFrameNameInput.value = msg.frameName;
-            
+
             // Set the dimensions info
-            frameDimensionsInfo.textContent = `Frame Dimensions: ${Math.round(msg.frameWidth)} × ${Math.round(msg.frameHeight)}px`;
-            
+            frameDimensionsInfo.textContent = `Frame Dimensions: ${Math.round(
+              msg.frameWidth
+            )} × ${Math.round(msg.frameHeight)}px`;
+
             // Show the modal
             showModal(inlineNameEditModal);
-            
+
             // Select the text in the input for easy editing
             setTimeout(() => {
               inlineFrameNameInput.select();
             }, 100);
-            
+
             // Set up event listeners
             saveInlineEditBtn.onclick = () => {
               const frameName = inlineFrameNameInput.value.trim();
@@ -3596,32 +4632,36 @@
                 showErrorMessage("Please enter a frame name");
                 return;
               }
-              
+
               // Send message to save the frame with the edited name
-              parent.postMessage({
-                pluginMessage: {
-                  type: "save-frame-with-name",
-                  frameName: frameName,
-                  frameWidth: window.currentFrameData.frameWidth,
-                  frameHeight: window.currentFrameData.frameHeight,
-                  targetCollectionId: window.currentFrameData.targetCollectionId,
-                  frameProps: window.currentFrameData.frameProps
-                }
-              }, "*");
-              
+              parent.postMessage(
+                {
+                  pluginMessage: {
+                    type: "save-frame-with-name",
+                    frameName: frameName,
+                    frameWidth: window.currentFrameData.frameWidth,
+                    frameHeight: window.currentFrameData.frameHeight,
+                    targetCollectionId:
+                      window.currentFrameData.targetCollectionId,
+                    frameProps: window.currentFrameData.frameProps,
+                  },
+                },
+                "*"
+              );
+
               // Hide the modal
               hideModal(inlineNameEditModal);
             };
-            
+
             cancelInlineEditBtn.onclick = () => {
               hideModal(inlineNameEditModal);
             };
-            
+
             // Add keyboard event handlers
-            inlineFrameNameInput.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
+            inlineFrameNameInput.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
                 saveInlineEditBtn.click();
-              } else if (e.key === 'Escape') {
+              } else if (e.key === "Escape") {
                 cancelInlineEditBtn.click();
               }
             });
@@ -3664,26 +4704,32 @@
               // Only update the input fields, don't initialize yet
               supabaseUrlInput.value = msg.config.url;
               supabaseKeyInput.value = msg.config.key;
-              
+
               // Store the config for later use
               supabaseConfig = msg.config;
-              
+
               // Only initialize when actually needed (when performing operations)
-              console.log("Received Supabase config, will initialize when needed");
+              console.log(
+                "Received Supabase config, will initialize when needed"
+              );
             }
             break;
 
           case "selection-data":
             // This case is no longer used since we're saving frames directly
             // Kept for backward compatibility
-            console.log("Received selection-data message - this flow is deprecated");
+            console.log(
+              "Received selection-data message - this flow is deprecated"
+            );
             break;
 
           case "no-custom-collections":
             // Handle the case when there are no custom collections
-            if (confirm(
-              "You need to create a collection first to save frames. Would you like to create one now?"
-            )) {
+            if (
+              confirm(
+                "You need to create a collection first to save frames. Would you like to create one now?"
+              )
+            ) {
               collectionNameInput.value = "";
               showModal(newCollectionModal);
 
@@ -3784,16 +4830,16 @@
         expandedCollections.forEach((collectionId) => {
           if (collectionId !== pluginData.activeCollectionId) {
             // Skip active collection as it's already handled
-          const contentDiv = document.querySelector(
-            `.collection-content[data-collection-id="${collectionId}"]`
-          );
-          const header = document.querySelector(
-            `.collection-header[data-id="${collectionId}"]`
-          );
-          if (contentDiv) contentDiv.classList.add("expanded");
-          if (header) {
-            const arrow = header.querySelector(".arrow");
-            if (arrow) arrow.classList.add("expanded");
+            const contentDiv = document.querySelector(
+              `.collection-content[data-collection-id="${collectionId}"]`
+            );
+            const header = document.querySelector(
+              `.collection-header[data-id="${collectionId}"]`
+            );
+            if (contentDiv) contentDiv.classList.add("expanded");
+            if (header) {
+              const arrow = header.querySelector(".arrow");
+              if (arrow) arrow.classList.add("expanded");
             }
           }
         });
@@ -3851,7 +4897,7 @@
         const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluding similar looking characters
         let attempts = 0;
         const maxAttempts = 10;
-        
+
         while (attempts < maxAttempts) {
           // Generate a 6-character code
           let result = "";
@@ -3860,7 +4906,7 @@
               Math.floor(Math.random() * characters.length)
             );
           }
-          
+
           try {
             // Check if this ID already exists in the database
             const { data, error } = await supabaseClient
@@ -3868,13 +4914,13 @@
               .select("share_id")
               .eq("share_id", result)
               .maybeSingle();
-              
+
             if (error) {
               console.error("Error checking share ID uniqueness:", error);
               // If there's an error, just return the ID and hope for the best
               return result;
             }
-            
+
             // If no matching ID found, this ID is unique
             if (!data) {
               return result;
@@ -3883,10 +4929,10 @@
             console.error("Error in generateUniqueShareId:", err);
             return result;
           }
-          
+
           attempts++;
         }
-        
+
         // If we've tried too many times, generate a longer ID to ensure uniqueness
         let fallbackId = "";
         for (let i = 0; i < 8; i++) {
@@ -3911,7 +4957,10 @@
 
           // Initialize Supabase client if needed
           if (!supabaseClient && supabaseConfig.url && supabaseConfig.key) {
-            const success = await initSupabase(supabaseConfig.url, supabaseConfig.key);
+            const success = await initSupabase(
+              supabaseConfig.url,
+              supabaseConfig.key
+            );
             if (!success) {
               showErrorMessage("Failed to initialize connection");
               return;
@@ -4071,65 +5120,71 @@
       // Add keyboard event handlers to modals for accessibility
       function setupModalKeyboardHandling() {
         // New Collection Modal
-        collectionNameInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
+        collectionNameInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
             saveCollectionBtn.click();
-          } else if (e.key === 'Escape') {
+          } else if (e.key === "Escape") {
             cancelCollectionBtn.click();
           }
         });
-        
+
         // Import Collection Modal
-        importIdInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
+        importIdInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
             importCollectionBtn.click();
-          } else if (e.key === 'Escape') {
+          } else if (e.key === "Escape") {
             cancelImportBtn.click();
           }
         });
-        
+
         // Share Collection Modal (Escape to close)
-        shareCollectionModal.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
+        shareCollectionModal.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
             closeShareModalBtn.click();
-          } else if (e.key === 'Enter' || e.key === ' ') {
+          } else if (e.key === "Enter" || e.key === " ") {
             copyShareLinkBtn.click();
           }
         });
       }
-      
+
       // Call this function after the DOM is loaded
-      document.addEventListener('DOMContentLoaded', setupModalKeyboardHandling);
+      document.addEventListener("DOMContentLoaded", setupModalKeyboardHandling);
 
       // Buy Me a Coffee button click handler
-      document.addEventListener('DOMContentLoaded', () => {
-        const bmcButton = document.getElementById('bmc-button');
+      document.addEventListener("DOMContentLoaded", () => {
+        const bmcButton = document.getElementById("bmc-button");
         if (bmcButton) {
-          bmcButton.addEventListener('click', () => {
+          bmcButton.addEventListener("click", () => {
             // Open Buy Me a Coffee link in a browser window
-            parent.postMessage({
-              pluginMessage: {
-                type: 'open-url',
-                url: 'https://www.buymeacoffee.com/habeebrahman'
-              }
-            }, '*');
-            showSuccessMessage('Opening Buy Me a Coffee page...');
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "open-url",
+                  url: "https://www.buymeacoffee.com/habeebrahman",
+                },
+              },
+              "*"
+            );
+            showSuccessMessage("Opening Buy Me a Coffee page...");
           });
         }
-        
+
         // Premium bundle link click handler using event delegation
-        document.addEventListener('click', (e) => {
-          const premiumBundleBtn = e.target.closest('#premium-bundle-btn');
+        document.addEventListener("click", (e) => {
+          const premiumBundleBtn = e.target.closest("#premium-bundle-btn");
           if (premiumBundleBtn) {
             e.preventDefault();
             // Open premium bundles link in a browser window
-            parent.postMessage({
-              pluginMessage: {
-                type: 'open-url',
-                url: 'https://saveframe.gumroad.com/'
-              }
-            }, '*');
-            showSuccessMessage('Opening premium frame bundles page...');
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "open-url",
+                  url: "https://saveframe.gumroad.com/",
+                },
+              },
+              "*"
+            );
+            showSuccessMessage("Opening premium frame bundles page...");
           }
         });
       });
@@ -4138,30 +5193,38 @@
       parent.postMessage({ pluginMessage: { type: "ui-ready" } }, "*");
 
       // Add keyboard shortcut handler for clearing data (before the closing script tag)
-      
+
       // Dev tools for clearing data
-      document.addEventListener('keydown', async (e) => {
+      document.addEventListener("keydown", async (e) => {
         // Ctrl + Shift + Delete to clear all plugin data
-        if (e.ctrlKey && e.shiftKey && e.key === 'Delete') {
-          if (confirm('⚠️ Development: Are you sure you want to clear all plugin data? This cannot be undone.')) {
+        if (e.ctrlKey && e.shiftKey && e.key === "Delete") {
+          if (
+            confirm(
+              "⚠️ Development: Are you sure you want to clear all plugin data? This cannot be undone."
+            )
+          ) {
             // Clear the UI
             pluginData = {
               collections: [],
               activeCollectionId: null,
-              lastSyncedAt: null
+              lastSyncedAt: null,
             };
-            
-            // Clear the collections container
-            collectionsContainer.innerHTML = '<div class="empty-state">No collections. Create one using the "New Collection" button.</div>';
-            
-            // Notify Figma to clear storage
-            parent.postMessage({
-              pluginMessage: {
-                type: 'clear-plugin-data'
-              }
-            }, '*');
 
-            showSuccessMessage('Plugin data cleared successfully');
+            // Clear the collections container
+            collectionsContainer.innerHTML =
+              '<div class="empty-state">No collections. Create one using the "New Collection" button.</div>';
+
+            // Notify Figma to clear storage
+            parent.postMessage(
+              {
+                pluginMessage: {
+                  type: "clear-plugin-data",
+                },
+              },
+              "*"
+            );
+
+            showSuccessMessage("Plugin data cleared successfully");
           }
         }
       });
@@ -4184,7 +5247,11 @@
 
       // Reset plugin to defaults
       resetPluginBtn.addEventListener("click", () => {
-        if (confirm("Are you sure you want to reset the plugin to defaults? All your custom collections will be deleted.")) {
+        if (
+          confirm(
+            "Are you sure you want to reset the plugin to defaults? All your custom collections will be deleted."
+          )
+        ) {
           parent.postMessage(
             {
               pluginMessage: {
