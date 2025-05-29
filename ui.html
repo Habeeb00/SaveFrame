@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Frame Presets</title>
+    <title>SaveFrame</title>
     <style>
       :root {
         /* Light Mode Variables */
@@ -558,7 +558,7 @@
       .collection-content.expanded .preset-card:nth-child(3),
       .collection-content.expanded .preset-card:nth-child(4),
       .collection-content.expanded .preset-card:nth-child(5),
-      .collection-content.expanded .preset-card:nth-child(n+6) {
+      .collection-content.expanded .preset-card:nth-child(n + 6) {
         animation-delay: 0ms;
       }
 
@@ -1027,7 +1027,6 @@
         margin-top: 8px;
         margin-bottom: 0;
         text-align: left;
-        
       }
       .form-actions {
         display: flex;
@@ -2192,7 +2191,11 @@
 
       /* Style Help section like Quick Start */
       .help-section.support-section {
-        background: linear-gradient(135deg, var(--hover-color) 0%, var(--bg-color) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--hover-color) 0%,
+          var(--bg-color) 100%
+        );
         border-radius: 10px;
         padding: 16px;
         margin-bottom: 20px;
@@ -2286,7 +2289,7 @@
   <body data-theme="dark">
     <div class="sidebar">
       <div class="header">
-        <h3>Save Frame</h3>
+        <h3>v1.0</h3>
         <div>
           <button
             id="create-preset-btn"
@@ -2431,7 +2434,11 @@
             Support creator
           </button>
         </div>
-        <div class="theme-toggle" id="theme-toggle" data-tooltip="Dark/Light mode">
+        <div
+          class="theme-toggle"
+          id="theme-toggle"
+          data-tooltip="Dark/Light mode"
+        >
           <svg
             width="14"
             height="14"
@@ -2573,7 +2580,21 @@
               placeholder="Paste the 6-character code"
             />
             <div class="input-hint">
-              Paste the 6-character code shared with you to import a collection.
+              <span
+                >Paste the 6-character code shared with you to import a
+                collection.</span
+              ><br />
+              <span
+                style="
+                  display: block;
+                  margin-top: 6px;
+                  color: var(--secondary-color);
+                  font-size: 10px;
+                "
+              >
+                To share a collection, use the Share button in the collection
+                header.
+              </span>
             </div>
           </div>
         </div>
@@ -2634,7 +2655,10 @@
               </svg>
               Test Connection
             </button>
-            <div class="settings-description">Test your Supabase connection to ensure cloud sync works.</div>
+            <div class="settings-description">
+              Test connection with database if you encounter any error in share
+              feature.
+            </div>
           </div>
 
           <div class="settings-section">
@@ -2730,36 +2754,36 @@
     <!-- Help Modal -->
     <div class="modal" id="help-modal">
       <div class="modal-content">
-        <div class="modal-header">Welcome to Frame Presets! 🎨</div>
+        <div class="modal-header">Welcome to SaveFrame ! 🎨</div>
         <div class="modal-body help-modal-body">
           <div class="help-section">
             <h3>🚀 Quick Start Guide</h3>
             <div class="quick-start-section">
               <div class="step-container">
-                  <div class="step-number">1</div>
-                  <div class="step-content">
-                    <strong>Create Collection</strong>
-                    <p>
-                      Start by creating a new collection to organize your
-                      frames. Click the "New Collection" button to get started.
-                    </p>
-                  </div>
-                  <div class="step-number">2</div>
-                  <div class="step-content">
-                    <strong>Save Frames</strong>
-                    <p>
-                      Select any frame in Figma and click "Save Frame" to add it
-                      to your active collection.
-                    </p>
-                  </div>
-                  <div class="step-number">3</div>
-                  <div class="step-content">
-                    <strong>Apply & Reuse</strong>
-                    <p>
-                      Click any saved frame to instantly apply its dimensions to
-                      your selected frame in Figma.
-                    </p>
-                  </div>
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <strong>Create Collection</strong>
+                  <p>
+                    Start by creating a new collection to organize your frames.
+                    Click the "New Collection" button to get started.
+                  </p>
+                </div>
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <strong>Save Frames</strong>
+                  <p>
+                    Select any frame in Figma and click "Save Frame" to add it
+                    to your active collection.
+                  </p>
+                </div>
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <strong>Apply & Reuse</strong>
+                  <p>
+                    Click any saved frame to instantly apply its dimensions to
+                    your selected frame in Figma.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -2803,11 +2827,11 @@
           <div class="help-section">
             <h3>⌨️ Pro Tips & Shortcuts</h3>
             <div class="tips-container">
-                <strong>Keyboard Shortcuts:</strong>
-                <ul class="help-list">
-                  <li><kbd>Enter</kbd> - Save when editing a frame name</li>
-                  <li><kbd>Esc</kbd> - Cancel or close any open modal</li>
-                </ul>
+              <strong>Keyboard Shortcuts:</strong>
+              <ul class="help-list">
+                <li><kbd>Enter</kbd> - Save when editing a frame name</li>
+                <li><kbd>Esc</kbd> - Cancel or close any open modal</li>
+              </ul>
             </div>
           </div>
 
@@ -2848,7 +2872,7 @@
           <div class="help-section support-section">
             <h3>🤝 Need Help?</h3>
             <div class="support-content">
-              <p>We're here to help you make the most of Frame Presets!</p>
+              <p>We're here to help you make the most of SaveFrame !</p>
               <ul class="help-list">
                 <li>
                   📧 Email us at:
@@ -2868,7 +2892,7 @@
           </div>
         </div>
         <div class="form-actions">
-          <button id="close-help-btn" class="primary">Got it! 👍</button>
+          <button id="close-help-btn" class="primary">Got it!</button>
         </div>
       </div>
     </div>
