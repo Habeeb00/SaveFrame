@@ -46,6 +46,13 @@ interface PluginMessage {
   [key: string]: any;
 }
 
+interface SupportPreferences {
+  hasInteracted: boolean;
+  lastShown: number;
+  dontShowAgain: boolean;
+  action?: "rated" | "supported" | "dismissed";
+}
+
 // IDs of built-in collections that should be preserved during sync operations
 const BUILT_IN_COLLECTION_IDS = [
   "instagram",
@@ -153,58 +160,67 @@ const defaultCollections: Collection[] = [
 
 // Hardcoded Supabase configuration - these will be used for all users
 const SUPABASE_CONFIG = {
-  url: "https://mrtcubtbzefdjvnnghen.supabase.co",  // Replace with your actual Supabase project URL
-  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydGN1YnRiemVmZGp2bm5naGVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzNDIwOTMsImV4cCI6MjA2MTkxODA5M30.yH2jGdHR7wHHyyBJy2dY-8wgpJl0dd9BDs3JRh_8IgQ"  // Replace with your actual anon/public key
+  url: "https://mrtcubtbzefdjvnnghen.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydGN1YnRiemVmZGp2bm5naGVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzNDIwOTMsImV4cCI6MjA2MTkxODA5M30.yH2jGdHR7wHHyyBJy2dY-8wgpJl0dd9BDs3JRh_8IgQ", // Replace with your actual anon/public key
 };
 
 // Simple fetch-based Supabase client implementation to avoid the complex library
 class SimpleSupabaseClient {
   private url: string;
   private key: string;
-  
+
   constructor(url: string, key: string) {
     this.url = url;
     this.key = key;
-    console.log(`Created simple Supabase client for ${url.substring(0, 15)}...`);
+    console.log(
+      `Created simple Supabase client for ${url.substring(0, 15)}...`
+    );
   }
-  
-  async fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<any> {
+
+  async fetchWithAuth(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<any> {
     const headers = {
-      'apikey': this.key,
-      'Authorization': `Bearer ${this.key}`,
-      'Content-Type': 'application/json',
-      ...options.headers
+      apikey: this.key,
+      Authorization: `Bearer ${this.key}`,
+      "Content-Type": "application/json",
+      ...options.headers,
     };
-    
+
     try {
       const response = await fetch(`${this.url}${endpoint}`, {
         ...options,
-        headers
+        headers,
       });
-      
+
       if (!response.ok) {
-        throw new Error(`Supabase error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Supabase error: ${response.status} ${response.statusText}`
+        );
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Supabase fetch error:', error);
+      console.error("Supabase fetch error:", error);
       throw error;
     }
   }
-  
+
   from(table: string) {
     return {
       select: async (query: string = "*") => {
-        const result = await this.fetchWithAuth(`/rest/v1/${table}?select=${query}`);
+        const result = await this.fetchWithAuth(
+          `/rest/v1/${table}?select=${query}`
+        );
         return { data: result, error: null };
       },
       upsert: async (data: any) => {
         try {
           const result = await this.fetchWithAuth(`/rest/v1/${table}`, {
-            method: 'POST',
+            method: "POST",
             body: JSON.stringify(data),
-            headers: { 'Prefer': 'resolution=merge-duplicates' }
+            headers: { Prefer: "resolution=merge-duplicates" },
           });
           return { data: result, error: null };
         } catch (error) {
@@ -217,27 +233,27 @@ class SimpleSupabaseClient {
             try {
               // Use the operator parameter in the query string
               let queryParam = "";
-              
+
               if (operator === "in") {
                 // Handle "not in" case
-                const notInQuery = value.map(v => `"${v}"`).join(',');
+                const notInQuery = value.map((v) => `"${v}"`).join(",");
                 queryParam = `${column}=not.in.(${notInQuery})`;
               } else {
                 // Handle other operators if needed
-                queryParam = `${column}=not.${operator}.(${value.join(',')})`;
+                queryParam = `${column}=not.${operator}.(${value.join(",")})`;
               }
-              
+
               const result = await this.fetchWithAuth(
                 `/rest/v1/${table}?${queryParam}`,
-                { method: 'DELETE' }
+                { method: "DELETE" }
               );
               return { data: result, error: null };
             } catch (error) {
               return { data: null, error };
             }
-          }
+          },
         };
-      }
+      },
     };
   }
 }
@@ -249,7 +265,10 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
   if (!supabaseClient) {
     try {
       // Initialize the client with hardcoded config
-      supabaseClient = new SimpleSupabaseClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+      supabaseClient = new SimpleSupabaseClient(
+        SUPABASE_CONFIG.url,
+        SUPABASE_CONFIG.key
+      );
 
       // Test the connection
       const { error: testError } = await supabaseClient
@@ -257,7 +276,6 @@ async function syncWithSupabase(data: PluginData): Promise<boolean> {
         .select("*");
 
       if (testError) throw testError;
-      
     } catch (error) {
       console.error("Failed to initialize Supabase client:", error);
       throw error;
@@ -310,11 +328,11 @@ async function initializePlugin() {
   try {
     // First try to load existing data from storage
     const existingData = await figma.clientStorage.getAsync("framePresetsData");
-    
+
     if (existingData) {
       // If we have existing data, use it
       console.log("Loaded existing plugin data:", existingData);
-      
+
       // Send existing data to the UI
       figma.ui.postMessage({
         type: "init",
@@ -345,7 +363,7 @@ async function initializePlugin() {
     // Also send Supabase config
     figma.ui.postMessage({
       type: "supabase-config",
-      config: SUPABASE_CONFIG
+      config: SUPABASE_CONFIG,
     });
   } catch (error) {
     console.error("Error initializing plugin data:", error);
@@ -443,14 +461,18 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
       }
 
       // Determine target collection (use active collection or first custom collection)
-      const targetCollectionId = msg.targetCollectionId || 
-                                (checkData.activeCollectionId && 
-                                 !checkData.collections.find(c => c.id === checkData.activeCollectionId)?.isBuiltIn ? 
-                                 checkData.activeCollectionId : customCollections[0].id);
-      
+      const targetCollectionId =
+        msg.targetCollectionId ||
+        (checkData.activeCollectionId &&
+        !checkData.collections.find(
+          (c) => c.id === checkData.activeCollectionId
+        )?.isBuiltIn
+          ? checkData.activeCollectionId
+          : customCollections[0].id);
+
       // For now, handle only the first frame for simplicity if multiple are selected
       const frame = selectedFrames[0];
-      
+
       // Instead of asking for a name directly in Figma, we'll send a message to the UI
       figma.ui.postMessage({
         type: "inline-name-edit",
@@ -462,38 +484,43 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
           fills: JSON.parse(JSON.stringify(frame.fills || [])),
           strokes: JSON.parse(JSON.stringify(frame.strokes || [])),
           strokeWeight: Number(frame.strokeWeight),
-          cornerRadius: typeof frame.cornerRadius === "object"
-            ? JSON.parse(JSON.stringify(frame.cornerRadius))
-            : frame.cornerRadius,
+          cornerRadius:
+            typeof frame.cornerRadius === "object"
+              ? JSON.parse(JSON.stringify(frame.cornerRadius))
+              : frame.cornerRadius,
           effects: JSON.parse(JSON.stringify(frame.effects || [])),
           layoutMode: frame.layoutMode,
           primaryAxisSizingMode: frame.primaryAxisSizingMode,
           counterAxisSizingMode: frame.counterAxisSizingMode,
           primaryAxisAlignItems: frame.primaryAxisAlignItems,
-          counterAxisAlignItems: frame.counterAxisAlignItems === "MIN" || 
-                                frame.counterAxisAlignItems === "CENTER" || 
-                                frame.counterAxisAlignItems === "MAX" ? 
-                                frame.counterAxisAlignItems : "CENTER",
+          counterAxisAlignItems:
+            frame.counterAxisAlignItems === "MIN" ||
+            frame.counterAxisAlignItems === "CENTER" ||
+            frame.counterAxisAlignItems === "MAX"
+              ? frame.counterAxisAlignItems
+              : "CENTER",
           paddingLeft: frame.paddingLeft,
           paddingRight: frame.paddingRight,
           paddingTop: frame.paddingTop,
           paddingBottom: frame.paddingBottom,
           itemSpacing: frame.itemSpacing,
           clipsContent: frame.clipsContent,
-        }
+        },
       });
       break;
-      
+
     case "save-frame-with-name":
       // This is a new message type for saving a frame with an edited name
       if (!msg.frameName || !msg.targetCollectionId) {
         figma.notify("Error: Missing required data for saving frame");
         return;
       }
-      
+
       // Get plugin data again to ensure we have the latest
-      const frameSaveData: PluginData = await figma.clientStorage.getAsync("framePresetsData");
-      
+      const frameSaveData: PluginData = await figma.clientStorage.getAsync(
+        "framePresetsData"
+      );
+
       // Create the preset with the edited name
       const newPreset: FramePreset = {
         id: `preset-${Date.now()}`,
@@ -502,27 +529,29 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
         height: msg.frameHeight,
         isFavorite: false,
         dateCreated: Date.now(),
-        ...msg.frameProps // Spread the frame properties
+        ...msg.frameProps, // Spread the frame properties
       };
-      
+
       // Find the target collection
       const frameSaveCollectionIndex = frameSaveData.collections.findIndex(
-        c => c.id === msg.targetCollectionId
+        (c) => c.id === msg.targetCollectionId
       );
-      
+
       if (frameSaveCollectionIndex >= 0) {
         // Add preset to the collection
-        frameSaveData.collections[frameSaveCollectionIndex].presets.push(newPreset);
-        
+        frameSaveData.collections[frameSaveCollectionIndex].presets.push(
+          newPreset
+        );
+
         // Save updated data
         await savePluginData(frameSaveData);
-        
+
         // Send updated data to UI
         figma.ui.postMessage({
           type: "update",
           data: frameSaveData,
         });
-        
+
         // Show success notification
         figma.notify(
           `Saved "${msg.frameName}" to "${frameSaveData.collections[frameSaveCollectionIndex].name}"`
@@ -796,26 +825,26 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
     case "clear-plugin-data":
       // Clear all stored data
       await figma.clientStorage.deleteAsync("framePresetsData");
-      
+
       // Re-initialize with default collections
       const stockData: PluginData = {
-        collections: defaultCollections,  // This will restore the default built-in collections
-        activeCollectionId: "instagram"  // Set a default active collection
+        collections: defaultCollections, // This will restore the default built-in collections
+        activeCollectionId: "instagram", // Set a default active collection
       };
       await savePluginData(stockData);
-      
+
       // Reset to hardcoded Supabase config
       await figma.clientStorage.setAsync("supabaseConfig", SUPABASE_CONFIG);
-      
+
       // Notify UI about both updates
       figma.ui.postMessage({
         type: "update",
-        data: stockData
+        data: stockData,
       });
 
       figma.ui.postMessage({
         type: "supabase-config",
-        config: SUPABASE_CONFIG
+        config: SUPABASE_CONFIG,
       });
 
       // Notify user
@@ -1101,11 +1130,67 @@ figma.ui.onmessage = async (msg: PluginMessage) => {
           console.error("Error retrieving Supabase config:", err)
         );
       break;
-      
+
     case "open-url":
       // Open a URL in the default browser
       if (msg.url) {
         figma.openExternal(msg.url);
+      }
+      break;
+
+    case "get-support-preferences":
+      // Get support preferences and determine if modal should be shown
+      const supportPrefs: SupportPreferences =
+        (await figma.clientStorage.getAsync("supportPreferences")) || {
+          hasInteracted: false,
+          lastShown: 0,
+          dontShowAgain: false,
+        };
+
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+      const shouldShow =
+        !supportPrefs.dontShowAgain &&
+        !supportPrefs.hasInteracted &&
+        now - supportPrefs.lastShown > sevenDaysMs;
+
+      if (shouldShow) {
+        // Update last shown time
+        await figma.clientStorage.setAsync("supportPreferences", {
+          ...supportPrefs,
+          lastShown: now,
+        });
+      }
+
+      figma.ui.postMessage({
+        type: "support-preferences-response",
+        shouldShowModal: shouldShow,
+      });
+      break;
+
+    case "set-support-preference":
+      // Save support preference based on user action
+      const currentPrefs: SupportPreferences =
+        (await figma.clientStorage.getAsync("supportPreferences")) || {
+          hasInteracted: false,
+          lastShown: 0,
+          dontShowAgain: false,
+        };
+
+      const updatedPrefs: SupportPreferences = {
+        ...currentPrefs,
+        hasInteracted: true,
+        dontShowAgain: msg.dontShowAgain || currentPrefs.dontShowAgain,
+        action: msg.action,
+      };
+
+      await figma.clientStorage.setAsync("supportPreferences", updatedPrefs);
+
+      // Show appropriate notification based on action
+      if (msg.action === "rated") {
+        figma.notify("Thank you for rating SaveFrame! ⭐");
+      } else if (msg.action === "supported") {
+        figma.notify("Thank you for your support! ☕️");
       }
       break;
   }
